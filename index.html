@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#17142b" />
+    <meta name="description" content="Карина прокачивается — личная RPG для реальной жизни" />
+    <title>Карина прокачивается</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+    <main class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="На главную">
+          <span class="brand-mark">К</span>
+          <span>Карина прокачивается</span>
+        </a>
+        <button class="button button-primary add-task-button" type="button"><span>＋</span> Новое задание</button>
+      </header>
+
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <span class="eyebrow">ТВОЯ ЛИЧНАЯ RPG</span>
+          <h1 id="hero-title">Каждый день —<br /><span>новый уровень себя</span></h1>
+          <p>Маленькие шаги превращаются в большую историю. Выбери задание и получи заслуженный опыт.</p>
+        </div>
+        <div class="level-orb" aria-label="Текущий уровень">
+          <span>УРОВЕНЬ</span>
+          <strong id="level">1</strong>
+          <small>Продолжай сиять ✦</small>
+        </div>
+      </section>
+
+      <section class="stats-grid" aria-label="Статистика">
+        <article class="stat-card xp-card">
+          <div class="stat-icon purple">✦</div>
+          <div class="stat-copy"><span>Всего опыта</span><strong><span id="total-xp">0</span> <small>XP</small></strong></div>
+          <div class="progress-wrap">
+            <div class="progress-label"><span>До уровня <b id="next-level">2</b></span><span><b id="current-level-xp">0</b> / 100 XP</span></div>
+            <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
+          </div>
+        </article>
+        <article class="stat-card compact-card">
+          <div class="stat-icon orange">🔥</div>
+          <div class="stat-copy"><span>Серия</span><strong><span id="streak">0</span> <small id="streak-label">дней</small></strong></div>
+          <span class="stat-note">Не останавливайся!</span>
+        </article>
+        <article class="stat-card compact-card">
+          <div class="stat-icon green">✓</div>
+          <div class="stat-copy"><span>Выполнено</span><strong id="completed-count">0</strong></div>
+          <span class="stat-note">заданий за всё время</span>
+        </article>
+      </section>
+
+      <section class="content-grid">
+        <div class="tasks-panel">
+          <div class="section-heading">
+            <div><span class="eyebrow">ТВОЙ ПУТЬ</span><h2>Задания</h2></div>
+            <button class="button button-ghost mobile-add add-task-button" type="button">＋ Добавить</button>
+          </div>
+          <div class="category-filters" id="category-filters" aria-label="Фильтр по направлениям"></div>
+          <div class="task-list" id="task-list"></div>
+          <div class="empty-state" id="empty-tasks" hidden><span>✨</span><h3>Здесь пока тихо</h3><p>Добавь задание и сделай первый шаг.</p></div>
+        </div>
+
+        <aside class="history-panel">
+          <div class="section-heading"><div><span class="eyebrow">ЛЕТОПИСЬ ПОБЕД</span><h2>История</h2></div></div>
+          <div class="history-list" id="history-list"></div>
+          <div class="empty-state small" id="empty-history"><span>🏆</span><h3>Победы впереди</h3><p>Выполненные задания появятся здесь.</p></div>
+        </aside>
+      </section>
+      <footer>Создано с заботой о себе <span>♥</span></footer>
+    </main>
+
+    <dialog id="task-dialog" aria-labelledby="dialog-title">
+      <form id="task-form" method="dialog">
+        <div class="dialog-header"><div><span class="eyebrow">НОВЫЙ КВЕСТ</span><h2 id="dialog-title">Добавить задание</h2></div><button class="icon-button" id="close-dialog" type="button" aria-label="Закрыть">×</button></div>
+        <label>Название задания<input id="task-title" name="title" type="text" maxlength="80" placeholder="Например, сделать зарядку" required autocomplete="off" /></label>
+        <label>Направление<select id="task-category" name="category" required></select></label>
+        <label>Награда<div class="xp-input"><input id="task-xp" name="xp" type="number" min="1" max="100" value="15" required /><span>XP</span></div></label>
+        <div class="dialog-actions"><button class="button button-ghost" id="cancel-dialog" type="button">Отмена</button><button class="button button-primary" type="submit">Добавить задание</button></div>
+      </form>
+    </dialog>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
