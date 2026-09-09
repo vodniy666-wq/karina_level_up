@@ -22,9 +22,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css?v=20260909-7" />
-    <script src="backup-core.js?v=20260909-4" defer></script>
+    <script src="backup-core.js?v=20260909-5" defer></script>
     <script src="task-core.js?v=20260909-1" defer></script>
-    <script src="app.js?v=20260909-4" defer></script>
+    <script src="app.js?v=20260909-5" defer></script>
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -116,6 +116,7 @@
       <section class="backup-panel" aria-labelledby="backup-title">
         <div class="backup-copy"><span class="eyebrow">БЕЗОПАСНОСТЬ ПРОГРЕССА</span><h2 id="backup-title">Данные и резервная копия</h2><p>Сохрани задания, историю и XP в файл или восстанови их на этом устройстве.</p></div>
         <div class="backup-actions">
+          <button class="button button-ghost" id="restore-emergency-backup" type="button" hidden>↶ Вернуть прогресс до сброса</button>
           <button class="button button-primary" id="export-backup" type="button">↓ Скачать резервную копию</button>
           <label class="button button-ghost file-button" for="backup-file">
             ↥ Восстановить из копии

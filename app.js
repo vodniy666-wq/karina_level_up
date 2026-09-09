@@ -3,8 +3,8 @@ const LOCAL_BACKUPS_KEY = `${STORAGE_KEY}-backups`;
 const MAX_LOCAL_BACKUPS = 5;
 const backupTools = globalThis.KarinaBackup;
 const taskTools = globalThis.KarinaTasks;
-const PROGRESS_RESET_MARKER_KEY = `${STORAGE_KEY}-reset-${backupTools.PROGRESS_RESET_ID}`;
-const PRE_RESET_EMERGENCY_BACKUP_KEY = `${PROGRESS_RESET_MARKER_KEY}-emergency-backup`;
+// Legacy key containing the safety copy made before the retired reset of 9 September 2026.
+const PRE_RESET_EMERGENCY_BACKUP_KEY = `${STORAGE_KEY}-reset-real-use-start-2026-09-09-emergency-backup`;
 
 const categories = {
   selfCare: { name: "Забота о себе", icon: "♡", color: "#9a806f" },
@@ -27,6 +27,7 @@ const elements = {
   filters: document.querySelector("#category-filters"), dialog: document.querySelector("#task-dialog"), form: document.querySelector("#task-form"),
   title: document.querySelector("#task-title"), category: document.querySelector("#task-category"), type: document.querySelector("#task-type"), toast: document.querySelector("#toast"),
   exportBackup: document.querySelector("#export-backup"), backupFile: document.querySelector("#backup-file"),
+  restoreEmergencyBackup: document.querySelector("#restore-emergency-backup"),
 };
 
 function loadState() {
@@ -34,34 +35,25 @@ function loadState() {
   try {
     if (raw !== null) {
       const migrated = backupTools.migrateState(JSON.parse(raw));
-      if (migrated.ok) return runOneTimeProgressReset(migrated.state);
+      if (migrated.ok) return migrated.state;
     }
   } catch (error) { console.warn("Не удалось прочитать сохранение", error); }
   const recovered = backupTools.findLatestValidSnapshot(readLocalBackups());
   if (recovered) {
     const restored = recovered;
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(restored)); } catch (error) { console.warn("Не удалось восстановить сохранение", error); }
-    return runOneTimeProgressReset(restored);
+    return restored;
   }
-  return runOneTimeProgressReset({ dataVersion: backupTools.DATA_VERSION, tasks: backupTools.DEFAULT_TASKS.map(task => ({ ...task })), history: [], xp: 0 });
+  return { dataVersion: backupTools.DATA_VERSION, tasks: backupTools.DEFAULT_TASKS.map(task => ({ ...task })), history: [], xp: 0 };
 }
 
-function runOneTimeProgressReset(currentState) {
-  if (localStorage.getItem(PROGRESS_RESET_MARKER_KEY) === "complete" || currentState.completedMigrations?.[backupTools.PROGRESS_RESET_ID]) return currentState;
-  const reset = backupTools.applyOneTimeProgressReset(currentState);
-  if (!reset.ok) return currentState;
+function readEmergencyBackup() {
   try {
-    const emergencyBackup = backupTools.createBackup(currentState);
-    localStorage.setItem(PRE_RESET_EMERGENCY_BACKUP_KEY, JSON.stringify(emergencyBackup));
-    const snapshots = backupTools.addLocalSnapshot(readLocalBackups(), currentState, MAX_LOCAL_BACKUPS);
-    localStorage.setItem(LOCAL_BACKUPS_KEY, JSON.stringify(snapshots));
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(reset.state));
-    localStorage.setItem(PROGRESS_RESET_MARKER_KEY, "complete");
-    return reset.state;
-  } catch (error) {
-    console.warn("Не удалось безопасно сбросить тестовый прогресс", error);
-    return currentState;
-  }
+    const raw = localStorage.getItem(PRE_RESET_EMERGENCY_BACKUP_KEY);
+    if (raw === null) return null;
+    const parsed = backupTools.parseBackup(JSON.parse(raw));
+    return parsed.ok ? parsed.state : null;
+  } catch (error) { console.warn("Не удалось прочитать аварийную копию", error); return null; }
 }
 
 function readLocalBackups() {
@@ -211,6 +203,28 @@ async function importBackup(file) {
   } finally { elements.backupFile.value = ""; }
 }
 
+function restoreEmergencyProgress() {
+  const emergencyState = readEmergencyBackup();
+  if (!emergencyState) {
+    elements.restoreEmergencyBackup.hidden = true;
+    showToast("Аварийная копия не найдена или повреждена");
+    return;
+  }
+  if (!confirm("Восстановить XP, историю и отмеченные сегодня привычки из аварийной копии? Текущие привычки и квесты останутся на месте.")) return;
+  const restored = backupTools.restoreProgress(state, emergencyState, taskTools.localDateKey());
+  if (!restored.ok) { showToast(`Прогресс не восстановлен: ${restored.error}`); return; }
+  try {
+    snapshotCurrentState();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(restored.state));
+    state = restored.state;
+    render();
+    showToast("Прогресс из аварийной копии восстановлен ✓");
+  } catch (error) {
+    console.warn("Не удалось восстановить аварийную копию", error);
+    showToast("Не удалось сохранить восстановленный прогресс");
+  }
+}
+
 function completeTask(id) {
   const previousLevel = Math.floor(state.xp / 100) + 1;
   const result = taskTools.complete(state, id);
@@ -240,5 +254,7 @@ elements.form.addEventListener("submit", event => {
 });
 elements.exportBackup.addEventListener("click", exportBackup);
 elements.backupFile.addEventListener("change", () => importBackup(elements.backupFile.files[0]));
+elements.restoreEmergencyBackup.addEventListener("click", restoreEmergencyProgress);
+elements.restoreEmergencyBackup.hidden = readEmergencyBackup() === null;
 
 render();

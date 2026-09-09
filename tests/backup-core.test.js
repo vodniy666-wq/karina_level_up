@@ -33,17 +33,20 @@ test("does not restore other default tasks that were removed before version 3", 
   assert.deepEqual(state.tasks.map(task => task.id), ["daily-clean-day", "custom-1"]);
 });
 
-test("one-time reset clears progress but keeps active tasks and settings", () => {
-  const before = backup.migrateState({ ...legacyState, dataVersion: 2, tasks: [{ ...legacyState.tasks[0], type: "habit", lastCompletedOn: "2026-09-09" }] }).state;
-  const result = backup.applyOneTimeProgressReset(before);
+test("manual emergency restore returns progress without replacing current tasks", () => {
+  const current = backup.migrateState({ ...legacyState, dataVersion: 2, xp: 0, history: [], tasks: [
+    { ...legacyState.tasks[0], type: "habit" },
+    { id: "new-quest", title: "Новый квест", category: "impressions", xp: 20, type: "quest" },
+  ] }).state;
+  const emergency = backup.migrateState({ ...legacyState, dataVersion: 2, tasks: [{ ...legacyState.tasks[0], type: "habit", lastCompletedOn: "2026-09-09" }] }).state;
+  const result = backup.restoreProgress(current, emergency, "2026-09-09");
   assert.equal(result.ok, true);
-  assert.equal(result.state.xp, 0);
-  assert.deepEqual(result.state.history, []);
+  assert.equal(result.state.xp, 115);
+  assert.equal(result.state.history[0].title, "Готово");
   assert.equal(result.state.userPreference, "сохраняется");
-  assert.equal(result.state.tasks.some(task => task.id === "custom-1"), true);
-  assert.equal(result.state.tasks.some(task => task.lastCompletedOn), false);
-  assert.equal(result.state.completedMigrations[backup.PROGRESS_RESET_ID], true);
-  assert.deepEqual(backup.applyOneTimeProgressReset(result.state).state, result.state);
+  assert.equal(result.state.tasks.find(task => task.id === "custom-1").lastCompletedOn, "2026-09-09");
+  assert.equal(result.state.tasks.some(task => task.id === "new-quest"), true);
+  assert.deepEqual(result.state.tasks.map(task => task.id), current.tasks.map(task => task.id));
 });
 
 test("exports and imports a complete versioned backup", () => {
