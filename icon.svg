@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Иконка приложения «Карина прокачивается»</title>
+  <desc id="description">Элегантная буква К и веточка эвкалипта на молочном фоне</desc>
+  <rect width="512" height="512" rx="104" fill="#f7f3e8"/>
+  <path d="M166 126c26-15 50-18 70-9-19 8-31 22-31 48v177c0 25 11 41 32 51-28 9-54 5-77-12 10-9 15-24 15-46V177c0-24-3-41-9-51Z" fill="#65735a"/>
+  <path d="M332 113c23-3 43 3 60 17-25 7-47 21-65 42l-83 96 94 105c12 14 27 24 46 31-27 8-52 4-75-11l-98-116 92-111c15-18 25-36 29-53Z" fill="#7f8b69"/>
+  <path d="M288 424c40-32 67-72 83-120 13-41 16-84 9-129" fill="none" stroke="#7b8767" stroke-width="7" stroke-linecap="round"/>
+  <g fill="#9eaa86">
+    <ellipse cx="310" cy="390" rx="15" ry="31" transform="rotate(-51 310 390)"/>
+    <ellipse cx="345" cy="348" rx="16" ry="32" transform="rotate(-54 345 348)"/>
+    <ellipse cx="365" cy="296" rx="16" ry="31" transform="rotate(-69 365 296)"/>
+    <ellipse cx="375" cy="238" rx="15" ry="30" transform="rotate(-79 375 238)"/>
+  </g>
+  <g fill="#7f8d70">
+    <ellipse cx="342" cy="396" rx="15" ry="30" transform="rotate(39 342 396)"/>
+    <ellipse cx="374" cy="351" rx="16" ry="31" transform="rotate(48 374 351)"/>
+    <ellipse cx="391" cy="299" rx="15" ry="30" transform="rotate(67 391 299)"/>
+    <ellipse cx="392" cy="243" rx="14" ry="28" transform="rotate(79 392 243)"/>
+    <ellipse cx="378" cy="190" rx="13" ry="26" transform="rotate(-10 378 190)"/>
+  </g>
+</svg>
