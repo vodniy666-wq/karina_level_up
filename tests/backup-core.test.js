@@ -12,10 +12,12 @@ const legacyState = {
 test("loads and versions existing unversioned state without losing fields", () => {
   const result = backup.migrateState(JSON.parse(JSON.stringify(legacyState)));
   assert.equal(result.ok, true);
-  assert.equal(result.state.dataVersion, 1);
+  assert.equal(result.state.dataVersion, 2);
   assert.equal(result.state.xp, 115);
   assert.equal(result.state.history[0].title, "Готово");
-  assert.equal(result.state.tasks[0].title, "Моё задание");
+  assert.equal(result.state.tasks.find(task => task.id === "custom-1").title, "Моё задание");
+  assert.equal(result.state.tasks.find(task => task.id === "custom-1").type, "quest");
+  assert.equal(result.state.tasks.filter(task => task.type === "habit").length, 4);
   assert.equal(result.state.userPreference, "сохраняется");
 });
 
@@ -23,6 +25,14 @@ test("exports and imports a complete versioned backup", () => {
   const exported = backup.createBackup(legacyState, "2026-09-09T10:00:00.000Z");
   assert.deepEqual(backup.parseBackup(JSON.parse(JSON.stringify(exported))).state, exported.state);
   assert.equal(exported.formatVersion, 1);
+});
+
+test("backup keeps habit type and its last completion day", () => {
+  const state = backup.migrateState(legacyState).state;
+  const habit = state.tasks.find(task => task.type === "habit");
+  habit.lastCompletedOn = "2026-09-09";
+  const restored = backup.parseBackup(backup.createBackup(state)).state;
+  assert.equal(restored.tasks.find(task => task.id === habit.id).lastCompletedOn, "2026-09-09");
 });
 
 test("rejects damaged and foreign backups without producing state", () => {

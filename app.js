@@ -2,6 +2,7 @@ const STORAGE_KEY = "karina-level-up-v1";
 const LOCAL_BACKUPS_KEY = `${STORAGE_KEY}-backups`;
 const MAX_LOCAL_BACKUPS = 5;
 const backupTools = globalThis.KarinaBackup;
+const taskTools = globalThis.KarinaTasks;
 
 const categories = {
   selfCare: { name: "Забота о себе", icon: "♡", color: "#9a806f" },
@@ -11,14 +12,6 @@ const categories = {
   energy: { name: "Энергия", icon: "ϟ", color: "#91a26f" },
 };
 
-const starterTasks = [
-  ["Прочитать 20 страниц книги", "growth", 15],
-  ["Собрать красивый образ", "style", 10],
-  ["30 минут без телефона", "selfCare", 15],
-  ["Попробовать что-нибудь новое", "impressions", 20],
-  ["Прогулка 30 минут", "energy", 15],
-].map(([title, category, xp], index) => ({ id: `starter-${index}`, title, category, xp }));
-
 let state = loadState();
 let activeFilter = "all";
 let toastTimer;
@@ -26,10 +19,11 @@ let toastTimer;
 const elements = {
   level: document.querySelector("#level"), totalXp: document.querySelector("#total-xp"), nextLevel: document.querySelector("#next-level"),
   currentLevelXp: document.querySelector("#current-level-xp"), progressBar: document.querySelector("#progress-bar"), streak: document.querySelector("#streak"),
-  streakLabel: document.querySelector("#streak-label"), completedCount: document.querySelector("#completed-count"), taskList: document.querySelector("#task-list"),
-  historyList: document.querySelector("#history-list"), emptyTasks: document.querySelector("#empty-tasks"), emptyHistory: document.querySelector("#empty-history"),
+  streakLabel: document.querySelector("#streak-label"), completedCount: document.querySelector("#completed-count"), habitsList: document.querySelector("#habits-list"),
+  questsList: document.querySelector("#quests-list"), tasksPanel: document.querySelector("#tasks-panel"), historyList: document.querySelector("#history-list"),
+  emptyHabits: document.querySelector("#empty-habits"), emptyQuests: document.querySelector("#empty-quests"), emptyHistory: document.querySelector("#empty-history"),
   filters: document.querySelector("#category-filters"), dialog: document.querySelector("#task-dialog"), form: document.querySelector("#task-form"),
-  title: document.querySelector("#task-title"), category: document.querySelector("#task-category"), toast: document.querySelector("#toast"),
+  title: document.querySelector("#task-title"), category: document.querySelector("#task-category"), type: document.querySelector("#task-type"), toast: document.querySelector("#toast"),
   exportBackup: document.querySelector("#export-backup"), backupFile: document.querySelector("#backup-file"),
 };
 
@@ -47,7 +41,7 @@ function loadState() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(restored)); } catch (error) { console.warn("Не удалось восстановить сохранение", error); }
     return restored;
   }
-  return { dataVersion: backupTools.DATA_VERSION, tasks: starterTasks, history: [], xp: 0 };
+  return { dataVersion: backupTools.DATA_VERSION, tasks: backupTools.DEFAULT_TASKS.map(task => ({ ...task })), history: [], xp: 0 };
 }
 
 function readLocalBackups() {
@@ -102,19 +96,23 @@ function renderFilters() {
 
 function renderTasks() {
   const tasks = activeFilter === "all" ? state.tasks : state.tasks.filter(task => task.category === activeFilter);
-  elements.taskList.innerHTML = tasks.map(task => { const category = categories[task.category]; return `
-    <article class="task-card">
-      <button class="complete-button" data-complete="${task.id}" type="button" aria-label="Выполнить задание «${escapeHtml(task.title)}»">✓</button>
-      <div class="task-main"><h3>${escapeHtml(task.title)}</h3><span class="category-badge" style="color:${category.color}">${category.icon} ${category.name}</span></div>
+  const card = task => { const category = categories[task.category], completed = taskTools.isCompletedToday(task); return `
+    <article class="task-card ${completed ? "completed-today" : ""}">
+      <button class="complete-button" data-complete="${task.id}" type="button" ${completed ? "disabled" : ""} aria-label="${completed ? "Уже выполнено сегодня" : `Выполнить «${escapeHtml(task.title)}»`}">✓</button>
+      <div class="task-main"><h3>${escapeHtml(task.title)}</h3><div class="task-meta"><span class="type-badge type-${task.type}">${task.type === "habit" ? "Привычка" : "Квест"}</span><span class="category-badge" style="color:${category.color}">${category.icon} ${category.name}</span>${completed ? '<span class="done-label">Сегодня выполнено</span>' : ""}</div></div>
       <span class="xp-badge">+${task.xp} XP</span>
       <button class="delete-button" data-delete="${task.id}" type="button" aria-label="Удалить задание «${escapeHtml(task.title)}»">×</button>
-    </article>`; }).join("");
-  elements.emptyTasks.hidden = tasks.length > 0;
+    </article>`; };
+  const habits = tasks.filter(task => task.type === "habit"), quests = tasks.filter(task => task.type === "quest");
+  elements.habitsList.innerHTML = habits.map(card).join("");
+  elements.questsList.innerHTML = quests.map(card).join("");
+  elements.emptyHabits.hidden = habits.length > 0;
+  elements.emptyQuests.hidden = quests.length > 0;
 }
 
 function renderHistory() {
   elements.historyList.innerHTML = state.history.slice(0, 8).map(item => `
-    <article class="history-item"><span class="history-check">✓</span><div class="history-copy"><h3>${escapeHtml(item.title)}</h3><time datetime="${item.completedAt}">${new Intl.DateTimeFormat("ru-RU", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" }).format(new Date(item.completedAt))}</time></div><span class="history-xp">+${item.xp} XP</span></article>`).join("");
+    <article class="history-item"><span class="history-check">✓</span><div class="history-copy"><h3>${escapeHtml(item.title)}</h3><div><span class="type-badge type-${item.type}">${item.type === "habit" ? "Привычка" : "Квест"}</span> <time datetime="${item.completedAt}">${new Intl.DateTimeFormat("ru-RU", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" }).format(new Date(item.completedAt))}</time></div></div><span class="history-xp">+${item.xp} XP</span></article>`).join("");
   elements.emptyHistory.hidden = state.history.length > 0;
 }
 
@@ -194,15 +192,16 @@ async function importBackup(file) {
 }
 
 function completeTask(id) {
-  const index = state.tasks.findIndex(task => task.id === id); if (index < 0) return;
-  const [task] = state.tasks.splice(index, 1); const previousLevel = Math.floor(state.xp / 100) + 1;
-  state.xp += task.xp; state.history.unshift({ ...task, completedAt: new Date().toISOString() }); saveState(); render();
+  const previousLevel = Math.floor(state.xp / 100) + 1;
+  const result = taskTools.complete(state, id);
+  if (!result.ok) { if (result.reason === "already-completed") showToast("Эта привычка уже выполнена сегодня ✓"); return; }
+  state = result.state; const task = result.task; saveState(); render();
   const newLevel = Math.floor(state.xp / 100) + 1;
   showToast(newLevel > previousLevel ? `Новый уровень — ${newLevel}!` : `Задание выполнено: +${task.xp} XP`);
 }
 
 elements.filters.addEventListener("click", event => { const button = event.target.closest("[data-filter]"); if (button) { activeFilter = button.dataset.filter; renderFilters(); renderTasks(); } });
-elements.taskList.addEventListener("click", event => {
+elements.tasksPanel.addEventListener("click", event => {
   const complete = event.target.closest("[data-complete]"), remove = event.target.closest("[data-delete]");
   if (complete) completeTask(complete.dataset.complete);
   if (remove && confirm("Удалить это задание?")) { state.tasks = state.tasks.filter(task => task.id !== remove.dataset.delete); saveState(); renderTasks(); showToast("Задание удалено"); }
@@ -216,7 +215,7 @@ elements.dialog.addEventListener("click", event => { if (event.target === elemen
 elements.form.addEventListener("submit", event => {
   event.preventDefault(); const data = new FormData(elements.form); const title = data.get("title").trim(); const xp = Number(data.get("xp"));
   if (!title || xp < 1 || xp > 100) return;
-  state.tasks.unshift({ id: makeId(), title, category: data.get("category"), xp }); saveState(); activeFilter = "all"; render();
+  state.tasks.unshift({ id: makeId(), title, category: data.get("category"), xp, type: data.get("type") }); saveState(); activeFilter = "all"; render();
   elements.form.reset(); elements.dialog.close(); showToast("Новое задание добавлено");
 });
 elements.exportBackup.addEventListener("click", exportBackup);

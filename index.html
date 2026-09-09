@@ -9,9 +9,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20260909-4" />
-    <script src="backup-core.js?v=20260909-2" defer></script>
-    <script src="app.js?v=20260909-2" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20260909-5" />
+    <script src="backup-core.js?v=20260909-3" defer></script>
+    <script src="task-core.js?v=20260909-1" defer></script>
+    <script src="app.js?v=20260909-3" defer></script>
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -58,14 +59,22 @@
       </section>
 
       <section class="content-grid">
-        <div class="tasks-panel">
+        <div class="tasks-panel" id="tasks-panel">
           <div class="section-heading">
-            <div><h2>Задания</h2></div>
+            <div><span class="eyebrow">РИТМ КАЖДОГО ДНЯ</span><h2>Ежедневная база</h2></div>
             <button class="button button-ghost mobile-add add-task-button" type="button">＋ Добавить</button>
           </div>
           <div class="category-filters" id="category-filters" aria-label="Фильтр по направлениям"></div>
-          <div class="task-list" id="task-list"></div>
-          <div class="empty-state" id="empty-tasks" hidden><span>⌁</span><h3>Здесь пока тихо</h3><p>Добавь задание и сделай первый шаг.</p></div>
+          <section class="task-section habits-section" aria-labelledby="habits-title">
+            <h3 class="visually-hidden" id="habits-title">Привычки</h3>
+            <div class="task-list" id="habits-list"></div>
+            <div class="empty-state" id="empty-habits" hidden><span>⌁</span><h3>Нет привычек в этом направлении</h3><p>Можно добавить новый ежедневный шаг.</p></div>
+          </section>
+          <section class="task-section quests-section" aria-labelledby="quests-title">
+            <div class="quest-heading"><span class="eyebrow">МАЛЕНЬКОЕ ПРИКЛЮЧЕНИЕ</span><h2 id="quests-title">Попробуем что-нибудь новенькое?</h2><p>Одноразовые задания для свежих впечатлений.</p></div>
+            <div class="task-list" id="quests-list"></div>
+            <div class="empty-state" id="empty-quests" hidden><span>❧</span><h3>Все квесты выполнены</h3><p>Добавь новый, когда захочется приключений.</p></div>
+          </section>
         </div>
 
         <aside class="history-panel">
@@ -91,6 +100,7 @@
       <form id="task-form" method="dialog">
         <div class="dialog-header"><div><span class="eyebrow">НОВАЯ ЗАПИСЬ</span><h2 id="dialog-title">Добавить задание</h2></div><button class="icon-button" id="close-dialog" type="button" aria-label="Закрыть">×</button></div>
         <label>Название задания<input id="task-title" name="title" type="text" maxlength="80" placeholder="Например, сделать зарядку" required autocomplete="off" /></label>
+        <label>Тип задания<select id="task-type" name="type" required><option value="habit">Привычка — повторяется каждый день</option><option value="quest">Квест — выполняется один раз</option></select></label>
         <label>Направление<select id="task-category" name="category" required></select></label>
         <label>Награда<div class="xp-input"><input id="task-xp" name="xp" type="number" min="1" max="100" value="15" required /><span>XP</span></div></label>
         <div class="dialog-actions"><button class="button button-ghost" id="cancel-dialog" type="button">Отмена</button><button class="button button-primary" type="submit">Добавить задание</button></div>
