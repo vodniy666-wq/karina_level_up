@@ -5,7 +5,6 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
   const DATA_VERSION = 3, BACKUP_FORMAT_VERSION = 1, APP_ID = "karina-level-up";
-  const PROGRESS_RESET_ID = "real-use-start-2026-09-09";
   const VALID_CATEGORIES = new Set(["selfCare", "style", "impressions", "growth", "energy"]);
   const VALID_TYPES = new Set(["habit", "quest"]);
   const DEFAULT_TASKS = [
@@ -78,19 +77,19 @@
     for (const snapshot of snapshots) { const migrated = migrateState(snapshot); if (migrated.ok) return migrated.state; }
     return null;
   }
-  function applyOneTimeProgressReset(value) {
-    const migrated = migrateState(value);
-    if (!migrated.ok) return migrated;
-    if (migrated.state.completedMigrations?.[PROGRESS_RESET_ID]) return migrated;
-    const tasks = migrated.state.tasks.map(({ lastCompletedOn, ...task }) => task);
-    const state = {
-      ...migrated.state,
-      tasks,
-      history: [],
-      xp: 0,
-      completedMigrations: { ...migrated.state.completedMigrations, [PROGRESS_RESET_ID]: true },
-    };
-    return { ok: true, state };
+  function restoreProgress(currentValue, backupValue, today) {
+    const current = migrateState(currentValue);
+    if (!current.ok) return current;
+    const backup = migrateState(backupValue);
+    if (!backup.ok) return backup;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(today)) return { ok: false, error: "Некорректная дата восстановления." };
+    const completedToday = new Set(backup.state.tasks
+      .filter(task => task.type === "habit" && task.lastCompletedOn === today)
+      .map(task => task.id));
+    const tasks = current.state.tasks.map(task => completedToday.has(task.id) && task.type === "habit"
+      ? { ...task, lastCompletedOn: today }
+      : task);
+    return { ok: true, state: { ...current.state, tasks, xp: backup.state.xp, history: backup.state.history } };
   }
-  return { DATA_VERSION, BACKUP_FORMAT_VERSION, APP_ID, PROGRESS_RESET_ID, DEFAULT_TASKS, validateState, migrateState, createBackup, parseBackup, addLocalSnapshot, findLatestValidSnapshot, applyOneTimeProgressReset };
+  return { DATA_VERSION, BACKUP_FORMAT_VERSION, APP_ID, DEFAULT_TASKS, validateState, migrateState, createBackup, parseBackup, addLocalSnapshot, findLatestValidSnapshot, restoreProgress };
 });
