@@ -3,6 +3,8 @@ const LOCAL_BACKUPS_KEY = `${STORAGE_KEY}-backups`;
 const MAX_LOCAL_BACKUPS = 5;
 const backupTools = globalThis.KarinaBackup;
 const taskTools = globalThis.KarinaTasks;
+const PROGRESS_RESET_MARKER_KEY = `${STORAGE_KEY}-reset-${backupTools.PROGRESS_RESET_ID}`;
+const PRE_RESET_EMERGENCY_BACKUP_KEY = `${PROGRESS_RESET_MARKER_KEY}-emergency-backup`;
 
 const categories = {
   selfCare: { name: "Забота о себе", icon: "♡", color: "#9a806f" },
@@ -32,16 +34,34 @@ function loadState() {
   try {
     if (raw !== null) {
       const migrated = backupTools.migrateState(JSON.parse(raw));
-      if (migrated.ok) return migrated.state;
+      if (migrated.ok) return runOneTimeProgressReset(migrated.state);
     }
   } catch (error) { console.warn("Не удалось прочитать сохранение", error); }
   const recovered = backupTools.findLatestValidSnapshot(readLocalBackups());
   if (recovered) {
     const restored = recovered;
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(restored)); } catch (error) { console.warn("Не удалось восстановить сохранение", error); }
-    return restored;
+    return runOneTimeProgressReset(restored);
   }
-  return { dataVersion: backupTools.DATA_VERSION, tasks: backupTools.DEFAULT_TASKS.map(task => ({ ...task })), history: [], xp: 0 };
+  return runOneTimeProgressReset({ dataVersion: backupTools.DATA_VERSION, tasks: backupTools.DEFAULT_TASKS.map(task => ({ ...task })), history: [], xp: 0 });
+}
+
+function runOneTimeProgressReset(currentState) {
+  if (localStorage.getItem(PROGRESS_RESET_MARKER_KEY) === "complete" || currentState.completedMigrations?.[backupTools.PROGRESS_RESET_ID]) return currentState;
+  const reset = backupTools.applyOneTimeProgressReset(currentState);
+  if (!reset.ok) return currentState;
+  try {
+    const emergencyBackup = backupTools.createBackup(currentState);
+    localStorage.setItem(PRE_RESET_EMERGENCY_BACKUP_KEY, JSON.stringify(emergencyBackup));
+    const snapshots = backupTools.addLocalSnapshot(readLocalBackups(), currentState, MAX_LOCAL_BACKUPS);
+    localStorage.setItem(LOCAL_BACKUPS_KEY, JSON.stringify(snapshots));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(reset.state));
+    localStorage.setItem(PROGRESS_RESET_MARKER_KEY, "complete");
+    return reset.state;
+  } catch (error) {
+    console.warn("Не удалось безопасно сбросить тестовый прогресс", error);
+    return currentState;
+  }
 }
 
 function readLocalBackups() {
@@ -99,7 +119,7 @@ function renderTasks() {
   const card = task => { const category = categories[task.category], completed = taskTools.isCompletedToday(task); return `
     <article class="task-card ${completed ? "completed-today" : ""}">
       <button class="complete-button" data-complete="${task.id}" type="button" ${completed ? "disabled" : ""} aria-label="${completed ? "Уже выполнено сегодня" : `Выполнить «${escapeHtml(task.title)}»`}">✓</button>
-      <div class="task-main"><h3>${escapeHtml(task.title)}</h3><div class="task-meta"><span class="type-badge type-${task.type}">${task.type === "habit" ? "Привычка" : "Квест"}</span><span class="category-badge" style="color:${category.color}">${category.icon} ${category.name}</span>${completed ? '<span class="done-label">Сегодня выполнено</span>' : ""}</div></div>
+      <div class="task-main"><h3>${escapeHtml(task.title)}</h3>${task.subtitle ? `<p class="task-subtitle">${escapeHtml(task.subtitle)}</p>` : ""}<div class="task-meta"><span class="type-badge type-${task.type}">${task.type === "habit" ? "Привычка" : "Квест"}</span><span class="category-badge" style="color:${category.color}">${category.icon} ${category.name}</span>${completed ? '<span class="done-label">Сегодня выполнено</span>' : ""}</div></div>
       <span class="xp-badge">+${task.xp} XP</span>
       <button class="delete-button" data-delete="${task.id}" type="button" aria-label="Удалить задание «${escapeHtml(task.title)}»">×</button>
     </article>`; };

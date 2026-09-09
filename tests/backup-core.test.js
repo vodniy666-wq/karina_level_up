@@ -12,13 +12,38 @@ const legacyState = {
 test("loads and versions existing unversioned state without losing fields", () => {
   const result = backup.migrateState(JSON.parse(JSON.stringify(legacyState)));
   assert.equal(result.ok, true);
-  assert.equal(result.state.dataVersion, 2);
+  assert.equal(result.state.dataVersion, 3);
   assert.equal(result.state.xp, 115);
   assert.equal(result.state.history[0].title, "Готово");
   assert.equal(result.state.tasks.find(task => task.id === "custom-1").title, "Моё задание");
   assert.equal(result.state.tasks.find(task => task.id === "custom-1").type, "quest");
-  assert.equal(result.state.tasks.filter(task => task.type === "habit").length, 4);
+  assert.equal(result.state.tasks.filter(task => task.type === "habit").length, 5);
   assert.equal(result.state.userPreference, "сохраняется");
+});
+
+test("adds Clean Day to existing saves and preserves it in backups", () => {
+  const state = backup.migrateState({ ...legacyState, dataVersion: 2 }).state;
+  const cleanDay = state.tasks.find(task => task.id === "daily-clean-day");
+  assert.deepEqual(cleanDay, { id: "daily-clean-day", title: "Чистый день", subtitle: "Сегодня без алкоголя", category: "selfCare", xp: 10, type: "habit" });
+  assert.deepEqual(backup.parseBackup(backup.createBackup(state)).state.tasks.find(task => task.id === cleanDay.id), cleanDay);
+});
+
+test("does not restore other default tasks that were removed before version 3", () => {
+  const state = backup.migrateState({ ...legacyState, dataVersion: 2 }).state;
+  assert.deepEqual(state.tasks.map(task => task.id), ["daily-clean-day", "custom-1"]);
+});
+
+test("one-time reset clears progress but keeps active tasks and settings", () => {
+  const before = backup.migrateState({ ...legacyState, dataVersion: 2, tasks: [{ ...legacyState.tasks[0], type: "habit", lastCompletedOn: "2026-09-09" }] }).state;
+  const result = backup.applyOneTimeProgressReset(before);
+  assert.equal(result.ok, true);
+  assert.equal(result.state.xp, 0);
+  assert.deepEqual(result.state.history, []);
+  assert.equal(result.state.userPreference, "сохраняется");
+  assert.equal(result.state.tasks.some(task => task.id === "custom-1"), true);
+  assert.equal(result.state.tasks.some(task => task.lastCompletedOn), false);
+  assert.equal(result.state.completedMigrations[backup.PROGRESS_RESET_ID], true);
+  assert.deepEqual(backup.applyOneTimeProgressReset(result.state).state, result.state);
 });
 
 test("exports and imports a complete versioned backup", () => {

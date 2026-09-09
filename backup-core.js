@@ -4,7 +4,8 @@
   else root.KarinaBackup = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
-  const DATA_VERSION = 2, BACKUP_FORMAT_VERSION = 1, APP_ID = "karina-level-up";
+  const DATA_VERSION = 3, BACKUP_FORMAT_VERSION = 1, APP_ID = "karina-level-up";
+  const PROGRESS_RESET_ID = "real-use-start-2026-09-09";
   const VALID_CATEGORIES = new Set(["selfCare", "style", "impressions", "growth", "energy"]);
   const VALID_TYPES = new Set(["habit", "quest"]);
   const DEFAULT_TASKS = [
@@ -12,6 +13,7 @@
     { id: "daily-main-workout", title: "Основная тренировка", category: "energy", xp: 10, type: "habit" },
     { id: "daily-reading", title: "Чтение книги 30 минут", category: "growth", xp: 10, type: "habit" },
     { id: "daily-self-care", title: "Уход за собой", category: "style", xp: 5, type: "habit" },
+    { id: "daily-clean-day", title: "Чистый день", subtitle: "Сегодня без алкоголя", category: "selfCare", xp: 10, type: "habit" },
     { id: "starter-new-place", title: "Зайти после работы в место, где я раньше не была, и провести там хотя бы 10 минут", category: "impressions", xp: 20, type: "quest" },
   ];
   const isPlainObject = value => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -19,6 +21,7 @@
   const isValidTask = task => isPlainObject(task)
     && typeof task.id === "string" && task.id.length > 0 && task.id.length <= 200
     && typeof task.title === "string" && task.title.trim().length > 0 && task.title.length <= 160
+    && (task.subtitle === undefined || (typeof task.subtitle === "string" && task.subtitle.length <= 160))
     && VALID_CATEGORIES.has(task.category) && VALID_TYPES.has(task.type)
     && isDateKey(task.lastCompletedOn)
     && Number.isInteger(task.xp) && task.xp >= 1 && task.xp <= 100;
@@ -36,7 +39,7 @@
 
   function migrateState(value) {
     if (!isPlainObject(value)) return { ok: false, error: "Состояние должно быть объектом." };
-    if (value.dataVersion !== undefined && value.dataVersion !== 1 && value.dataVersion !== DATA_VERSION) return { ok: false, error: "Версия данных не поддерживается." };
+    if (value.dataVersion !== undefined && ![1, 2, DATA_VERSION].includes(value.dataVersion)) return { ok: false, error: "Версия данных не поддерживается." };
     if (!Array.isArray(value.tasks) || !Array.isArray(value.history)) return { ok: false, error: "Некорректный список заданий." };
     const wasLegacy = value.dataVersion !== DATA_VERSION;
     const normalize = item => ({ ...item, type: VALID_TYPES.has(item.type) ? item.type : "quest" });
@@ -44,7 +47,10 @@
     const history = value.history.map(normalize);
     if (wasLegacy) {
       const knownIds = new Set([...tasks, ...history].map(item => item.id));
-      tasks = [...DEFAULT_TASKS.filter(task => !knownIds.has(task.id)), ...tasks];
+      const requiredDefaults = value.dataVersion === 2
+        ? DEFAULT_TASKS.filter(task => task.id === "daily-clean-day")
+        : DEFAULT_TASKS;
+      tasks = [...requiredDefaults.filter(task => !knownIds.has(task.id)), ...tasks];
     }
     const state = { ...value, tasks, history, dataVersion: DATA_VERSION };
     const validation = validateState(state);
@@ -72,5 +78,19 @@
     for (const snapshot of snapshots) { const migrated = migrateState(snapshot); if (migrated.ok) return migrated.state; }
     return null;
   }
-  return { DATA_VERSION, BACKUP_FORMAT_VERSION, APP_ID, DEFAULT_TASKS, validateState, migrateState, createBackup, parseBackup, addLocalSnapshot, findLatestValidSnapshot };
+  function applyOneTimeProgressReset(value) {
+    const migrated = migrateState(value);
+    if (!migrated.ok) return migrated;
+    if (migrated.state.completedMigrations?.[PROGRESS_RESET_ID]) return migrated;
+    const tasks = migrated.state.tasks.map(({ lastCompletedOn, ...task }) => task);
+    const state = {
+      ...migrated.state,
+      tasks,
+      history: [],
+      xp: 0,
+      completedMigrations: { ...migrated.state.completedMigrations, [PROGRESS_RESET_ID]: true },
+    };
+    return { ok: true, state };
+  }
+  return { DATA_VERSION, BACKUP_FORMAT_VERSION, APP_ID, PROGRESS_RESET_ID, DEFAULT_TASKS, validateState, migrateState, createBackup, parseBackup, addLocalSnapshot, findLatestValidSnapshot, applyOneTimeProgressReset };
 });
