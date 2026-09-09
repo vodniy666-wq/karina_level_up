@@ -9,9 +9,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20260909-1" />
-    <script src="backup-core.js?v=20260909-1" defer></script>
-    <script src="app.js?v=20260909-1" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20260909-2" />
+    <script src="backup-core.js?v=20260909-2" defer></script>
+    <script src="app.js?v=20260909-2" defer></script>
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -80,8 +80,10 @@
         <div class="backup-copy"><span class="eyebrow">БЕЗОПАСНОСТЬ ПРОГРЕССА</span><h2 id="backup-title">Данные и резервная копия</h2><p>Сохрани задания, историю и XP в файл или восстанови их на этом устройстве.</p></div>
         <div class="backup-actions">
           <button class="button button-primary" id="export-backup" type="button">↓ Скачать резервную копию</button>
-          <button class="button button-ghost" id="import-backup" type="button">↥ Восстановить из копии</button>
-          <input id="backup-file" type="file" accept="application/json,.json" hidden />
+          <label class="button button-ghost file-button" for="backup-file">
+            ↥ Восстановить из копии
+            <input id="backup-file" type="file" accept="application/json,.json" />
+          </label>
         </div>
       </section>
       <footer>Создано с заботой о себе <span>♥</span></footer>
