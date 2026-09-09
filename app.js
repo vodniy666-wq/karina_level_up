@@ -4,11 +4,11 @@ const MAX_LOCAL_BACKUPS = 5;
 const backupTools = globalThis.KarinaBackup;
 
 const categories = {
-  selfCare: { name: "Забота о себе", icon: "♡", color: "#e78cc7" },
-  style: { name: "Стиль и внешность", icon: "✦", color: "#b28cff" },
-  impressions: { name: "Впечатления", icon: "◉", color: "#ff9c6a" },
-  growth: { name: "Развитие", icon: "◇", color: "#68b9f1" },
-  energy: { name: "Энергия", icon: "ϟ", color: "#64d3aa" },
+  selfCare: { name: "Забота о себе", icon: "♡", color: "#9a806f" },
+  style: { name: "Стиль и внешность", icon: "✦", color: "#7d9274" },
+  impressions: { name: "Впечатления", icon: "◉", color: "#b18c65" },
+  growth: { name: "Развитие", icon: "◇", color: "#849b8b" },
+  energy: { name: "Энергия", icon: "ϟ", color: "#91a26f" },
 };
 
 const starterTasks = [
@@ -198,7 +198,7 @@ function completeTask(id) {
   const [task] = state.tasks.splice(index, 1); const previousLevel = Math.floor(state.xp / 100) + 1;
   state.xp += task.xp; state.history.unshift({ ...task, completedAt: new Date().toISOString() }); saveState(); render();
   const newLevel = Math.floor(state.xp / 100) + 1;
-  showToast(newLevel > previousLevel ? `Новый уровень — ${newLevel}! 🎉` : `Задание выполнено: +${task.xp} XP ✦`);
+  showToast(newLevel > previousLevel ? `Новый уровень — ${newLevel}!` : `Задание выполнено: +${task.xp} XP`);
 }
 
 elements.filters.addEventListener("click", event => { const button = event.target.closest("[data-filter]"); if (button) { activeFilter = button.dataset.filter; renderFilters(); renderTasks(); } });
@@ -217,7 +217,7 @@ elements.form.addEventListener("submit", event => {
   event.preventDefault(); const data = new FormData(elements.form); const title = data.get("title").trim(); const xp = Number(data.get("xp"));
   if (!title || xp < 1 || xp > 100) return;
   state.tasks.unshift({ id: makeId(), title, category: data.get("category"), xp }); saveState(); activeFilter = "all"; render();
-  elements.form.reset(); elements.dialog.close(); showToast("Новое задание добавлено ✦");
+  elements.form.reset(); elements.dialog.close(); showToast("Новое задание добавлено");
 });
 elements.exportBackup.addEventListener("click", exportBackup);
 elements.backupFile.addEventListener("change", () => importBackup(elements.backupFile.files[0]));

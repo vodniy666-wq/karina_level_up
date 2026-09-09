@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20260909-3" />
+    <link rel="stylesheet" href="styles.css?v=20260909-4" />
     <script src="backup-core.js?v=20260909-2" defer></script>
     <script src="app.js?v=20260909-2" defer></script>
   </head>
@@ -22,19 +22,23 @@
       </header>
 
       <section class="hero" aria-labelledby="hero-title">
+        <svg class="botanical botanical-left" viewBox="0 0 180 260" aria-hidden="true"><path d="M42 254C56 193 77 132 137 24M60 204C40 182 26 156 27 127M72 169C101 161 123 143 139 119M88 132C70 106 65 81 70 58M105 91C129 81 147 63 157 42"/><path class="leaf" d="M27 128c24 4 35 20 34 41-22-4-34-18-34-41ZM70 59c19 10 24 28 17 47-18-10-24-26-17-47ZM139 119c-5 21-19 32-39 33 5-20 18-31 39-33ZM157 42c-2 19-14 31-31 35 2-18 12-29 31-35Z"/></svg>
         <div class="hero-copy">
+          <span class="hero-kicker">ЛИЧНЫЙ ПЛАНЕР РОСТА</span>
           <h1 id="hero-title">Шаги на сегодня</h1>
+          <p>Небольшие действия складываются в большие перемены.</p>
         </div>
         <div class="level-orb" aria-label="Текущий уровень">
           <span>УРОВЕНЬ</span>
           <strong id="level">1</strong>
-          <small>Продолжай сиять ✦</small>
+          <small>Расти в своём ритме</small>
         </div>
+        <svg class="botanical botanical-right" viewBox="0 0 180 260" aria-hidden="true"><path d="M42 254C56 193 77 132 137 24M60 204C40 182 26 156 27 127M72 169C101 161 123 143 139 119M88 132C70 106 65 81 70 58M105 91C129 81 147 63 157 42"/><path class="leaf" d="M27 128c24 4 35 20 34 41-22-4-34-18-34-41ZM70 59c19 10 24 28 17 47-18-10-24-26-17-47ZM139 119c-5 21-19 32-39 33 5-20 18-31 39-33ZM157 42c-2 19-14 31-31 35 2-18 12-29 31-35Z"/></svg>
       </section>
 
       <section class="stats-grid" aria-label="Статистика">
         <article class="stat-card xp-card">
-          <div class="stat-icon purple">✦</div>
+          <div class="stat-icon purple">◇</div>
           <div class="stat-copy"><span>Всего опыта</span><strong><span id="total-xp">0</span> <small>XP</small></strong></div>
           <div class="progress-wrap">
             <div class="progress-label"><span>До уровня <b id="next-level">2</b></span><span><b id="current-level-xp">0</b> / 100 XP</span></div>
@@ -42,7 +46,7 @@
           </div>
         </article>
         <article class="stat-card compact-card">
-          <div class="stat-icon orange">🔥</div>
+          <div class="stat-icon orange">↗</div>
           <div class="stat-copy"><span>Серия</span><strong><span id="streak">0</span> <small id="streak-label">дней</small></strong></div>
           <span class="stat-note">Не останавливайся!</span>
         </article>
@@ -61,13 +65,13 @@
           </div>
           <div class="category-filters" id="category-filters" aria-label="Фильтр по направлениям"></div>
           <div class="task-list" id="task-list"></div>
-          <div class="empty-state" id="empty-tasks" hidden><span>✨</span><h3>Здесь пока тихо</h3><p>Добавь задание и сделай первый шаг.</p></div>
+          <div class="empty-state" id="empty-tasks" hidden><span>⌁</span><h3>Здесь пока тихо</h3><p>Добавь задание и сделай первый шаг.</p></div>
         </div>
 
         <aside class="history-panel">
           <div class="section-heading"><div><span class="eyebrow">ЛЕТОПИСЬ ПОБЕД</span><h2>История</h2></div></div>
           <div class="history-list" id="history-list"></div>
-          <div class="empty-state small" id="empty-history"><span>🏆</span><h3>Победы впереди</h3><p>Выполненные задания появятся здесь.</p></div>
+          <div class="empty-state small" id="empty-history"><span>❧</span><h3>Победы впереди</h3><p>Выполненные задания появятся здесь.</p></div>
         </aside>
       </section>
       <section class="backup-panel" aria-labelledby="backup-title">
@@ -80,12 +84,12 @@
           </label>
         </div>
       </section>
-      <footer>Создано с заботой о себе <span>♥</span></footer>
+      <footer><span class="footer-leaf">❧</span> Создано с заботой о себе</footer>
     </main>
 
     <dialog id="task-dialog" aria-labelledby="dialog-title">
       <form id="task-form" method="dialog">
-        <div class="dialog-header"><div><span class="eyebrow">НОВЫЙ КВЕСТ</span><h2 id="dialog-title">Добавить задание</h2></div><button class="icon-button" id="close-dialog" type="button" aria-label="Закрыть">×</button></div>
+        <div class="dialog-header"><div><span class="eyebrow">НОВАЯ ЗАПИСЬ</span><h2 id="dialog-title">Добавить задание</h2></div><button class="icon-button" id="close-dialog" type="button" aria-label="Закрыть">×</button></div>
         <label>Название задания<input id="task-title" name="title" type="text" maxlength="80" placeholder="Например, сделать зарядку" required autocomplete="off" /></label>
         <label>Направление<select id="task-category" name="category" required></select></label>
         <label>Награда<div class="xp-input"><input id="task-xp" name="xp" type="number" min="1" max="100" value="15" required /><span>XP</span></div></label>
