@@ -1,4 +1,7 @@
 const STORAGE_KEY = "karina-level-up-v1";
+const LOCAL_BACKUPS_KEY = `${STORAGE_KEY}-backups`;
+const MAX_LOCAL_BACKUPS = 5;
+const backupTools = globalThis.KarinaBackup;
 
 const categories = {
   selfCare: { name: "Забота о себе", icon: "♡", color: "#e78cc7" },
@@ -27,17 +30,48 @@ const elements = {
   historyList: document.querySelector("#history-list"), emptyTasks: document.querySelector("#empty-tasks"), emptyHistory: document.querySelector("#empty-history"),
   filters: document.querySelector("#category-filters"), dialog: document.querySelector("#task-dialog"), form: document.querySelector("#task-form"),
   title: document.querySelector("#task-title"), category: document.querySelector("#task-category"), toast: document.querySelector("#toast"),
+  exportBackup: document.querySelector("#export-backup"), importBackup: document.querySelector("#import-backup"), backupFile: document.querySelector("#backup-file"),
 };
 
 function loadState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (saved && Array.isArray(saved.tasks) && Array.isArray(saved.history)) return saved;
+    if (raw !== null) {
+      const migrated = backupTools.migrateState(JSON.parse(raw));
+      if (migrated.ok) return migrated.state;
+    }
   } catch (error) { console.warn("Не удалось прочитать сохранение", error); }
-  return { tasks: starterTasks, history: [], xp: 0 };
+  const recovered = backupTools.findLatestValidSnapshot(readLocalBackups());
+  if (recovered) {
+    const restored = recovered;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(restored)); } catch (error) { console.warn("Не удалось восстановить сохранение", error); }
+    return restored;
+  }
+  return { dataVersion: backupTools.DATA_VERSION, tasks: starterTasks, history: [], xp: 0 };
 }
 
-function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function readLocalBackups() {
+  try { const value = JSON.parse(localStorage.getItem(LOCAL_BACKUPS_KEY)); return Array.isArray(value) ? value : []; }
+  catch (error) { console.warn("Не удалось прочитать локальные копии", error); return []; }
+}
+function snapshotCurrentState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw === null) return;
+    const current = backupTools.migrateState(JSON.parse(raw));
+    if (!current.ok) return;
+    const snapshots = readLocalBackups();
+    const nextSnapshots = backupTools.addLocalSnapshot(snapshots, current.state, MAX_LOCAL_BACKUPS);
+    if (nextSnapshots !== snapshots) localStorage.setItem(LOCAL_BACKUPS_KEY, JSON.stringify(nextSnapshots));
+  } catch (error) { console.warn("Не удалось создать локальную копию", error); }
+}
+function saveState() {
+  const migrated = backupTools.migrateState(state);
+  if (!migrated.ok) throw new Error(migrated.error);
+  snapshotCurrentState();
+  state = migrated.state;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
 function makeId() { return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`; }
 function escapeHtml(value) { const node = document.createElement("span"); node.textContent = value; return node.innerHTML; }
 
@@ -94,6 +128,35 @@ function renderStats() {
 function render() { renderFilters(); renderTasks(); renderHistory(); renderStats(); }
 function showToast(message) { clearTimeout(toastTimer); elements.toast.textContent = message; elements.toast.classList.add("show"); toastTimer = setTimeout(() => elements.toast.classList.remove("show"), 2600); }
 
+function downloadBackup() {
+  const backup = backupTools.createBackup(state);
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+  const link = document.createElement("a"), date = backup.createdAt.slice(0, 10);
+  link.href = URL.createObjectURL(blob);
+  link.download = `karina-level-up-backup-${date}.json`;
+  document.body.append(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 0);
+  showToast("Резервная копия скачана ✓");
+}
+
+async function importBackup(file) {
+  try {
+    if (!file || file.size > 5 * 1024 * 1024) throw new Error("Файл слишком большой или не выбран.");
+    const parsed = backupTools.parseBackup(JSON.parse(await file.text()));
+    if (!parsed.ok) throw new Error(parsed.error);
+    if (!confirm("Восстановить резервную копию? Текущие данные будут заменены, но сначала сохранятся в локальной аварийной копии.")) return;
+    snapshotCurrentState();
+    state = parsed.state;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    activeFilter = "all";
+    render();
+    showToast("Прогресс успешно восстановлен ✓");
+  } catch (error) {
+    console.warn("Не удалось импортировать копию", error);
+    showToast(`Копия не восстановлена: ${error.message}`);
+  } finally { elements.backupFile.value = ""; }
+}
+
 function completeTask(id) {
   const index = state.tasks.findIndex(task => task.id === id); if (index < 0) return;
   const [task] = state.tasks.splice(index, 1); const previousLevel = Math.floor(state.xp / 100) + 1;
@@ -120,5 +183,8 @@ elements.form.addEventListener("submit", event => {
   state.tasks.unshift({ id: makeId(), title, category: data.get("category"), xp }); saveState(); activeFilter = "all"; render();
   elements.form.reset(); elements.dialog.close(); showToast("Новое задание добавлено ✦");
 });
+elements.exportBackup.addEventListener("click", downloadBackup);
+elements.importBackup.addEventListener("click", () => elements.backupFile.click());
+elements.backupFile.addEventListener("change", () => importBackup(elements.backupFile.files[0]));
 
 render();

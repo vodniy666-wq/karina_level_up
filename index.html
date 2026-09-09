@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
+    <script src="backup-core.js" defer></script>
     <script src="app.js" defer></script>
   </head>
   <body>
@@ -74,6 +75,14 @@
           <div class="history-list" id="history-list"></div>
           <div class="empty-state small" id="empty-history"><span>🏆</span><h3>Победы впереди</h3><p>Выполненные задания появятся здесь.</p></div>
         </aside>
+      </section>
+      <section class="backup-panel" aria-labelledby="backup-title">
+        <div class="backup-copy"><span class="eyebrow">БЕЗОПАСНОСТЬ ПРОГРЕССА</span><h2 id="backup-title">Данные и резервная копия</h2><p>Сохрани задания, историю и XP в файл или восстанови их на этом устройстве.</p></div>
+        <div class="backup-actions">
+          <button class="button button-primary" id="export-backup" type="button">↓ Скачать резервную копию</button>
+          <button class="button button-ghost" id="import-backup" type="button">↥ Восстановить из копии</button>
+          <input id="backup-file" type="file" accept="application/json,.json" hidden />
+        </div>
       </section>
       <footer>Создано с заботой о себе <span>♥</span></footer>
     </main>
