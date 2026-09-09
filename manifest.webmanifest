@@ -1,0 +1,19 @@
+{
+  "name": "Карина прокачивается",
+  "short_name": "Карина",
+  "description": "Личный планер роста и RPG для реальной жизни",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f3e8",
+  "theme_color": "#f5f2e9",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
