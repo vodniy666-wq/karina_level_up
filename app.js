@@ -30,7 +30,7 @@ const elements = {
   historyList: document.querySelector("#history-list"), emptyTasks: document.querySelector("#empty-tasks"), emptyHistory: document.querySelector("#empty-history"),
   filters: document.querySelector("#category-filters"), dialog: document.querySelector("#task-dialog"), form: document.querySelector("#task-form"),
   title: document.querySelector("#task-title"), category: document.querySelector("#task-category"), toast: document.querySelector("#toast"),
-  exportBackup: document.querySelector("#export-backup"), importBackup: document.querySelector("#import-backup"), backupFile: document.querySelector("#backup-file"),
+  exportBackup: document.querySelector("#export-backup"), backupFile: document.querySelector("#backup-file"),
 };
 
 function loadState() {
@@ -128,15 +128,51 @@ function renderStats() {
 function render() { renderFilters(); renderTasks(); renderHistory(); renderStats(); }
 function showToast(message) { clearTimeout(toastTimer); elements.toast.textContent = message; elements.toast.classList.add("show"); toastTimer = setTimeout(() => elements.toast.classList.remove("show"), 2600); }
 
-function downloadBackup() {
-  const backup = backupTools.createBackup(state);
-  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
-  const link = document.createElement("a"), date = backup.createdAt.slice(0, 10);
-  link.href = URL.createObjectURL(blob);
-  link.download = `karina-level-up-backup-${date}.json`;
-  document.body.append(link); link.click(); link.remove();
-  setTimeout(() => URL.revokeObjectURL(link.href), 0);
-  showToast("Резервная копия скачана ✓");
+function isIosDevice() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function downloadFile(file) {
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(file);
+  link.download = file.name;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+}
+
+async function exportBackup() {
+  try {
+    const backup = backupTools.createBackup(state);
+    const filename = `karina-level-up-backup-${backup.createdAt.slice(0, 10)}.json`;
+    const file = new File([JSON.stringify(backup, null, 2)], filename, { type: "application/json" });
+    const shareData = { title: "Резервная копия", files: [file] };
+    let canShareFile = false;
+
+    if (isIosDevice() && typeof navigator.share === "function" && typeof navigator.canShare === "function") {
+      try { canShareFile = navigator.canShare(shareData); }
+      catch (error) { console.warn("Браузер не может поделиться файлом", error); }
+    }
+
+    if (canShareFile) {
+      try {
+        await navigator.share(shareData);
+        showToast("Выбери «Сохранить в Файлы» в меню Поделиться ✓");
+      } catch (error) {
+        if (error?.name === "AbortError") return;
+        throw error;
+      }
+      return;
+    }
+
+    downloadFile(file);
+    showToast("Резервная копия скачана ✓");
+  } catch (error) {
+    console.warn("Не удалось экспортировать копию", error);
+    showToast("Не удалось создать резервную копию. Попробуй ещё раз.");
+  }
 }
 
 async function importBackup(file) {
@@ -183,8 +219,7 @@ elements.form.addEventListener("submit", event => {
   state.tasks.unshift({ id: makeId(), title, category: data.get("category"), xp }); saveState(); activeFilter = "all"; render();
   elements.form.reset(); elements.dialog.close(); showToast("Новое задание добавлено ✦");
 });
-elements.exportBackup.addEventListener("click", downloadBackup);
-elements.importBackup.addEventListener("click", () => elements.backupFile.click());
+elements.exportBackup.addEventListener("click", exportBackup);
 elements.backupFile.addEventListener("change", () => importBackup(elements.backupFile.files[0]));
 
 render();
