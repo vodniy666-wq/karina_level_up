@@ -111,7 +111,7 @@ function renderTasks() {
   const card = task => { const category = categories[task.category], completed = taskTools.isCompletedToday(task); return `
     <article class="task-card ${completed ? "completed-today" : ""}">
       <button class="complete-button" data-complete="${task.id}" type="button" ${completed ? "disabled" : ""} aria-label="${completed ? "Уже выполнено сегодня" : `Выполнить «${escapeHtml(task.title)}»`}">✓</button>
-      <div class="task-main"><h3>${escapeHtml(task.title)}</h3>${task.subtitle ? `<p class="task-subtitle">${escapeHtml(task.subtitle)}</p>` : ""}<div class="task-meta"><span class="type-badge type-${task.type}">${task.type === "habit" ? "Привычка" : "Квест"}</span><span class="category-badge" style="color:${category.color}">${category.icon} ${category.name}</span>${completed ? '<span class="done-label">Сегодня выполнено</span>' : ""}</div></div>
+      <div class="task-main"><h3>${escapeHtml(task.title)}</h3>${task.subtitle ? `<p class="task-subtitle">${escapeHtml(task.subtitle)}</p>` : ""}<div class="task-meta"><span class="type-badge type-${task.type}">${task.type === "habit" ? "Привычка" : "Квест"}</span><span class="category-badge" style="color:${category.color}">${category.icon} ${category.name}</span>${completed ? `<span class="done-label">Сегодня выполнено</span><button class="undo-button" data-undo="${task.id}" type="button">Отменить</button>` : ""}</div></div>
       <span class="xp-badge">+${task.xp} XP</span>
       <button class="delete-button" data-delete="${task.id}" type="button" aria-label="Удалить задание «${escapeHtml(task.title)}»">×</button>
     </article>`; };
@@ -234,10 +234,19 @@ function completeTask(id) {
   showToast(newLevel > previousLevel ? `Новый уровень — ${newLevel}!` : `Задание выполнено: +${task.xp} XP`);
 }
 
+function undoHabit(id) {
+  if (!confirm("Отменить выполнение этой привычки за сегодня?")) return;
+  const result = taskTools.undoHabit(state, id);
+  if (!result.ok) { showToast("Это выполнение уже нельзя отменить"); render(); return; }
+  state = result.state; saveState(); render();
+  showToast(`Выполнение отменено: −${result.task.xp} XP`);
+}
+
 elements.filters.addEventListener("click", event => { const button = event.target.closest("[data-filter]"); if (button) { activeFilter = button.dataset.filter; renderFilters(); renderTasks(); } });
 elements.tasksPanel.addEventListener("click", event => {
-  const complete = event.target.closest("[data-complete]"), remove = event.target.closest("[data-delete]");
+  const complete = event.target.closest("[data-complete]"), undo = event.target.closest("[data-undo]"), remove = event.target.closest("[data-delete]");
   if (complete) completeTask(complete.dataset.complete);
+  if (undo) undoHabit(undo.dataset.undo);
   if (remove && confirm("Удалить это задание?")) { state.tasks = state.tasks.filter(task => task.id !== remove.dataset.delete); saveState(); renderTasks(); showToast("Задание удалено"); }
 });
 

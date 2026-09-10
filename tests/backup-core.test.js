@@ -12,7 +12,7 @@ const legacyState = {
 test("loads and versions existing unversioned state without losing fields", () => {
   const result = backup.migrateState(JSON.parse(JSON.stringify(legacyState)));
   assert.equal(result.ok, true);
-  assert.equal(result.state.dataVersion, 3);
+  assert.equal(result.state.dataVersion, 4);
   assert.equal(result.state.xp, 115);
   assert.equal(result.state.history[0].title, "Готово");
   assert.equal(result.state.tasks.find(task => task.id === "custom-1").title, "Моё задание");
@@ -28,9 +28,28 @@ test("adds Clean Day to existing saves and preserves it in backups", () => {
   assert.deepEqual(backup.parseBackup(backup.createBackup(state)).state.tasks.find(task => task.id === cleanDay.id), cleanDay);
 });
 
-test("does not restore other default tasks that were removed before version 3", () => {
+test("adds the photo hunt once to existing saves and does not revive a completed quest", () => {
+  const oldState = { ...legacyState, dataVersion: 3 };
+  const migrated = backup.migrateState(oldState).state;
+  const photoHunt = migrated.tasks.find(task => task.id === "photo-hunt-three-details");
+  assert.deepEqual(photoHunt, {
+    id: "photo-hunt-three-details",
+    title: "Фотоохота: найти сегодня 3 красивых или необычных кадра в обычных местах",
+    category: "impressions",
+    xp: 20,
+    type: "quest",
+  });
+
+  const completedState = {
+    ...oldState,
+    history: [{ ...photoHunt, completedAt: "2026-09-10T12:00:00.000Z" }, ...oldState.history],
+  };
+  assert.equal(backup.migrateState(completedState).state.tasks.some(task => task.id === photoHunt.id), false);
+});
+
+test("only adds defaults introduced after version 2", () => {
   const state = backup.migrateState({ ...legacyState, dataVersion: 2 }).state;
-  assert.deepEqual(state.tasks.map(task => task.id), ["daily-clean-day", "custom-1"]);
+  assert.deepEqual(state.tasks.map(task => task.id), ["daily-clean-day", "photo-hunt-three-details", "custom-1"]);
 });
 
 test("manual emergency restore returns progress without replacing current tasks", () => {
