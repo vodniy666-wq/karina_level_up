@@ -34,3 +34,33 @@ test("quest moves to history and never returns", () => {
   assert.equal(result.state.history[0].type, "quest");
   assert.equal(tasks.complete(result.state, "quest").reason, "missing");
 });
+
+test("today's habit completion can be undone without touching earlier or unrelated progress", () => {
+  const yesterday = new Date(2026, 8, 9, 10);
+  const today = new Date(2026, 8, 10, 10);
+  const yesterdayResult = tasks.complete(baseState, "habit", yesterday);
+  const questResult = tasks.complete(yesterdayResult.state, "quest", yesterday);
+  const todayResult = tasks.complete(questResult.state, "habit", today);
+
+  const undone = tasks.undoHabit(todayResult.state, "habit", today);
+  assert.equal(undone.ok, true);
+  assert.equal(undone.state.xp, 30);
+  assert.equal(undone.state.history.length, 2);
+  assert.equal(undone.state.history.filter(item => item.id === "habit").length, 1);
+  assert.equal(undone.state.history.some(item => item.id === "quest"), true);
+  assert.equal(undone.state.tasks.find(task => task.id === "habit").lastCompletedOn, undefined);
+
+  const repeatedUndo = tasks.undoHabit(undone.state, "habit", today);
+  assert.equal(repeatedUndo.ok, false);
+  assert.equal(repeatedUndo.reason, "not-completed-today");
+  const completedAgain = tasks.complete(undone.state, "habit", today);
+  assert.equal(completedAgain.ok, true);
+  assert.equal(completedAgain.state.xp, 40);
+});
+
+test("habit completion cannot be undone on a later day", () => {
+  const completed = tasks.complete(baseState, "habit", new Date(2026, 8, 9, 23, 59));
+  const result = tasks.undoHabit(completed.state, "habit", new Date(2026, 8, 10, 0, 1));
+  assert.equal(result.ok, false);
+  assert.strictEqual(result.state, completed.state);
+});

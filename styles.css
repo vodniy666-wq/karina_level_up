@@ -98,6 +98,8 @@ h1 { font-size: clamp(38px, 5vw, 59px); line-height: 1.06; margin: 0; letter-spa
 .type-habit { color: #60725b; background: #e5eadc; }
 .type-quest { color: #866946; background: #f1e6d3; }
 .done-label { color: #687861; font-size: 9px; font-weight: 700; }
+.undo-button { border: 0; border-bottom: 1px solid rgba(104, 120, 97, .35); padding: 2px 0; background: transparent; color: #788273; font: inherit; font-size: 9px; line-height: 1; }
+.undo-button:hover { color: #4f614b; border-color: currentColor; }
 .category-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; }
 .xp-badge { padding: 7px 9px; border-radius: 8px; background: #edf0e2; color: #687861; font-weight: 800; font-size: 11px; white-space: nowrap; }
 .delete-button, .icon-button { border: 0; background: transparent; color: #969b91; font-size: 21px; padding: 5px; }

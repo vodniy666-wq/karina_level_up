@@ -25,5 +25,18 @@
     } else tasks = state.tasks.filter(item => item.id !== id);
     return { ok: true, task, state: { ...state, tasks, xp: state.xp + task.xp, history: [completed, ...state.history] } };
   }
-  return { localDateKey, isCompletedToday, complete };
+  function undoHabit(state, id, date = new Date()) {
+    const today = localDateKey(date);
+    const taskIndex = state.tasks.findIndex(task => task.id === id);
+    if (taskIndex < 0) return { ok: false, reason: "missing", state };
+    const task = state.tasks[taskIndex];
+    if (task.type !== "habit" || task.lastCompletedOn !== today) return { ok: false, reason: "not-completed-today", state };
+    const historyIndex = state.history.findIndex(item => item.id === id && item.type === "habit" && item.lastCompletedOn === today);
+    if (historyIndex < 0) return { ok: false, reason: "completion-missing", state };
+    const completion = state.history[historyIndex];
+    const tasks = state.tasks.map(item => item.id === id ? { ...item, lastCompletedOn: undefined } : item);
+    const history = state.history.filter((item, index) => index !== historyIndex);
+    return { ok: true, task, state: { ...state, tasks, xp: state.xp - completion.xp, history } };
+  }
+  return { localDateKey, isCompletedToday, complete, undoHabit };
 });
