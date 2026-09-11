@@ -12,7 +12,7 @@ const legacyState = {
 test("loads and versions existing unversioned state without losing fields", () => {
   const result = backup.migrateState(JSON.parse(JSON.stringify(legacyState)));
   assert.equal(result.ok, true);
-  assert.equal(result.state.dataVersion, 4);
+  assert.equal(result.state.dataVersion, 5);
   assert.equal(result.state.xp, 115);
   assert.equal(result.state.history[0].title, "Готово");
   assert.equal(result.state.tasks.find(task => task.id === "custom-1").title, "Моё задание");
@@ -47,9 +47,29 @@ test("adds the photo hunt once to existing saves and does not revive a completed
   assert.equal(backup.migrateState(completedState).state.tasks.some(task => task.id === photoHunt.id), false);
 });
 
+test("adds New Taste once to existing saves and does not revive a completed quest", () => {
+  const oldState = { ...legacyState, dataVersion: 4 };
+  const migrated = backup.migrateState(oldState).state;
+  const newTaste = migrated.tasks.find(task => task.id === "new-taste");
+  assert.deepEqual(newTaste, {
+    id: "new-taste",
+    title: "Новый вкус",
+    subtitle: "Попробуй сегодня что-нибудь, что ты обычно не берёшь: новый напиток, десерт, блюдо, фрукт, соус — вообще любую маленькую гастрономическую новинку.",
+    category: "impressions",
+    xp: 20,
+    type: "quest",
+  });
+
+  const completedState = {
+    ...oldState,
+    history: [{ ...newTaste, completedAt: "2026-09-11T12:00:00.000Z" }, ...oldState.history],
+  };
+  assert.equal(backup.migrateState(completedState).state.tasks.some(task => task.id === newTaste.id), false);
+});
+
 test("only adds defaults introduced after version 2", () => {
   const state = backup.migrateState({ ...legacyState, dataVersion: 2 }).state;
-  assert.deepEqual(state.tasks.map(task => task.id), ["daily-clean-day", "photo-hunt-three-details", "custom-1"]);
+  assert.deepEqual(state.tasks.map(task => task.id), ["daily-clean-day", "photo-hunt-three-details", "new-taste", "custom-1"]);
 });
 
 test("manual emergency restore returns progress without replacing current tasks", () => {

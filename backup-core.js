@@ -4,7 +4,7 @@
   else root.KarinaBackup = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
-  const DATA_VERSION = 4, BACKUP_FORMAT_VERSION = 1, APP_ID = "karina-level-up";
+  const DATA_VERSION = 5, BACKUP_FORMAT_VERSION = 1, APP_ID = "karina-level-up";
   const VALID_CATEGORIES = new Set(["selfCare", "style", "impressions", "growth", "energy"]);
   const VALID_TYPES = new Set(["habit", "quest"]);
   const DEFAULT_TASKS = [
@@ -15,6 +15,7 @@
     { id: "daily-clean-day", title: "Чистый день", subtitle: "Сегодня без алкоголя", category: "selfCare", xp: 10, type: "habit" },
     { id: "starter-new-place", title: "Зайти после работы в место, где я раньше не была, и провести там хотя бы 10 минут", category: "impressions", xp: 20, type: "quest" },
     { id: "photo-hunt-three-details", title: "Фотоохота: найти сегодня 3 красивых или необычных кадра в обычных местах", category: "impressions", xp: 20, type: "quest" },
+    { id: "new-taste", title: "Новый вкус", subtitle: "Попробуй сегодня что-нибудь, что ты обычно не берёшь: новый напиток, десерт, блюдо, фрукт, соус — вообще любую маленькую гастрономическую новинку.", category: "impressions", xp: 20, type: "quest" },
   ];
   const isPlainObject = value => value !== null && typeof value === "object" && !Array.isArray(value);
   const isDateKey = value => value === undefined || /^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -39,7 +40,7 @@
 
   function migrateState(value) {
     if (!isPlainObject(value)) return { ok: false, error: "Состояние должно быть объектом." };
-    if (value.dataVersion !== undefined && ![1, 2, 3, DATA_VERSION].includes(value.dataVersion)) return { ok: false, error: "Версия данных не поддерживается." };
+    if (value.dataVersion !== undefined && ![1, 2, 3, 4, DATA_VERSION].includes(value.dataVersion)) return { ok: false, error: "Версия данных не поддерживается." };
     if (!Array.isArray(value.tasks) || !Array.isArray(value.history)) return { ok: false, error: "Некорректный список заданий." };
     const wasLegacy = value.dataVersion !== DATA_VERSION;
     const normalize = item => ({ ...item, type: VALID_TYPES.has(item.type) ? item.type : "quest" });
@@ -47,10 +48,12 @@
     const history = value.history.map(normalize);
     if (wasLegacy) {
       const knownIds = new Set([...tasks, ...history].map(item => item.id));
-      const additionsByVersion = value.dataVersion === 3
-        ? ["photo-hunt-three-details"]
+      const additionsByVersion = value.dataVersion === 4
+        ? ["new-taste"]
+        : value.dataVersion === 3
+          ? ["photo-hunt-three-details", "new-taste"]
         : value.dataVersion === 2
-          ? ["daily-clean-day", "photo-hunt-three-details"]
+          ? ["daily-clean-day", "photo-hunt-three-details", "new-taste"]
           : null;
       const requiredDefaults = additionsByVersion
         ? DEFAULT_TASKS.filter(task => additionsByVersion.includes(task.id))
