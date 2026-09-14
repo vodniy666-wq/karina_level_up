@@ -12,7 +12,7 @@ const legacyState = {
 test("loads and versions existing unversioned state without losing fields", () => {
   const result = backup.migrateState(JSON.parse(JSON.stringify(legacyState)));
   assert.equal(result.ok, true);
-  assert.equal(result.state.dataVersion, 5);
+  assert.equal(result.state.dataVersion, 6);
   assert.equal(result.state.xp, 115);
   assert.equal(result.state.history[0].title, "Готово");
   assert.equal(result.state.tasks.find(task => task.id === "custom-1").title, "Моё задание");
@@ -67,9 +67,29 @@ test("adds New Taste once to existing saves and does not revive a completed ques
   assert.equal(backup.migrateState(completedState).state.tasks.some(task => task.id === newTaste.id), false);
 });
 
+test("adds Three New Tracks once to existing saves and does not revive a completed quest", () => {
+  const oldState = { ...legacyState, dataVersion: 5 };
+  const migrated = backup.migrateState(oldState).state;
+  const threeNewTracks = migrated.tasks.find(task => task.id === "three-new-tracks");
+  assert.deepEqual(threeNewTracks, {
+    id: "three-new-tracks",
+    title: "Три новых трека",
+    subtitle: "Найди исполнителя, которого ты почти не слушала, и включи 3 песни подряд. Можно лежать, пить чай и вообще ничего больше не делать.",
+    category: "impressions",
+    xp: 15,
+    type: "quest",
+  });
+
+  const completedState = {
+    ...oldState,
+    history: [{ ...threeNewTracks, completedAt: "2026-09-14T12:00:00.000Z" }, ...oldState.history],
+  };
+  assert.equal(backup.migrateState(completedState).state.tasks.some(task => task.id === threeNewTracks.id), false);
+});
+
 test("only adds defaults introduced after version 2", () => {
   const state = backup.migrateState({ ...legacyState, dataVersion: 2 }).state;
-  assert.deepEqual(state.tasks.map(task => task.id), ["daily-clean-day", "photo-hunt-three-details", "new-taste", "custom-1"]);
+  assert.deepEqual(state.tasks.map(task => task.id), ["daily-clean-day", "photo-hunt-three-details", "new-taste", "three-new-tracks", "custom-1"]);
 });
 
 test("manual emergency restore returns progress without replacing current tasks", () => {
