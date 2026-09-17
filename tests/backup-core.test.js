@@ -12,7 +12,7 @@ const legacyState = {
 test("loads and versions existing unversioned state without losing fields", () => {
   const result = backup.migrateState(JSON.parse(JSON.stringify(legacyState)));
   assert.equal(result.ok, true);
-  assert.equal(result.state.dataVersion, 6);
+  assert.equal(result.state.dataVersion, 7);
   assert.equal(result.state.xp, 115);
   assert.equal(result.state.history[0].title, "Готово");
   assert.equal(result.state.tasks.find(task => task.id === "custom-1").title, "Моё задание");
@@ -87,9 +87,29 @@ test("adds Three New Tracks once to existing saves and does not revive a complet
   assert.equal(backup.migrateState(completedState).state.tasks.some(task => task.id === threeNewTracks.id), false);
 });
 
+test("adds Refresh One Corner once to existing saves and does not revive a completed quest", () => {
+  const oldState = { ...legacyState, dataVersion: 6 };
+  const migrated = backup.migrateState(oldState).state;
+  const refreshOneCorner = migrated.tasks.find(task => task.id === "refresh-one-corner");
+  assert.deepEqual(refreshOneCorner, {
+    id: "refresh-one-corner",
+    title: "Освежить один угол",
+    subtitle: "Во время перестановки выбери одно маленькое место — полку, тумбочку, стол, подоконник, часть шкафа — и сделай его заметно приятнее, чем было. Не весь дом. Только один угол.",
+    category: "impressions",
+    xp: 15,
+    type: "quest",
+  });
+
+  const completedState = {
+    ...oldState,
+    history: [{ ...refreshOneCorner, completedAt: "2026-09-17T12:00:00.000Z" }, ...oldState.history],
+  };
+  assert.equal(backup.migrateState(completedState).state.tasks.some(task => task.id === refreshOneCorner.id), false);
+});
+
 test("only adds defaults introduced after version 2", () => {
   const state = backup.migrateState({ ...legacyState, dataVersion: 2 }).state;
-  assert.deepEqual(state.tasks.map(task => task.id), ["daily-clean-day", "photo-hunt-three-details", "new-taste", "three-new-tracks", "custom-1"]);
+  assert.deepEqual(state.tasks.map(task => task.id), ["daily-clean-day", "photo-hunt-three-details", "new-taste", "three-new-tracks", "refresh-one-corner", "custom-1"]);
 });
 
 test("manual emergency restore returns progress without replacing current tasks", () => {
