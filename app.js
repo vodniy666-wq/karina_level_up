@@ -28,6 +28,7 @@ const elements = {
   title: document.querySelector("#task-title"), category: document.querySelector("#task-category"), type: document.querySelector("#task-type"), toast: document.querySelector("#toast"),
   exportBackup: document.querySelector("#export-backup"), backupFile: document.querySelector("#backup-file"),
   restoreEmergencyBackup: document.querySelector("#restore-emergency-backup"),
+  levelOrb: document.querySelector(".level-orb"), eucalyptus: document.querySelector("#eucalyptus"),
 };
 
 function loadState() {
@@ -133,6 +134,26 @@ function renderStats() {
   elements.level.textContent = level; elements.totalXp.textContent = state.xp; elements.nextLevel.textContent = level + 1;
   elements.currentLevelXp.textContent = progress; elements.progressBar.style.width = `${progress}%`; elements.streak.textContent = streak;
   elements.streakLabel.textContent = pluralDays(streak); elements.completedCount.textContent = state.history.length;
+  renderEucalyptus(level, progress);
+}
+
+function renderEucalyptus(level, progress) {
+  const emergingOpacity = progress < 25 ? .06 : progress < 50 ? .3 : progress < 75 ? .58 : .84;
+  elements.eucalyptus.querySelectorAll("[data-growth-stage]").forEach(part => {
+    const stage = Number(part.dataset.growthStage);
+    part.style.setProperty("--growth-opacity", stage <= level ? 1 : stage === level + 1 ? emergingOpacity : 0);
+  });
+  const renewal = elements.eucalyptus.querySelector("[data-growth-renewal]");
+  renewal.style.setProperty("--growth-opacity", level > 10 ? Math.min(.35 + ((level - 11) % 5) * .12 + progress / 500, 1) : 0);
+  elements.levelOrb.dataset.maturity = String(Math.min(Math.floor((level - 1) / 10), 3));
+  elements.levelOrb.setAttribute("aria-label", `Текущий уровень ${level}. Эвкалипт вырос до ${level < 10 ? `${level} стадии из 10` : "зрелой стадии"}, прогресс внутри уровня ${progress} процентов.`);
+}
+
+function celebrateEucalyptus() {
+  elements.levelOrb.classList.remove("eucalyptus-celebrate");
+  void elements.levelOrb.offsetWidth;
+  elements.levelOrb.classList.add("eucalyptus-celebrate");
+  setTimeout(() => elements.levelOrb.classList.remove("eucalyptus-celebrate"), 900);
 }
 
 function render() { renderFilters(); renderTasks(); renderHistory(); renderStats(); }
@@ -231,6 +252,7 @@ function completeTask(id) {
   if (!result.ok) { if (result.reason === "already-completed") showToast("Эта привычка уже выполнена сегодня ✓"); return; }
   state = result.state; const task = result.task; saveState(); render();
   const newLevel = Math.floor(state.xp / 100) + 1;
+  celebrateEucalyptus();
   showToast(newLevel > previousLevel ? `Новый уровень — ${newLevel}!` : `Задание выполнено: +${task.xp} XP`);
 }
 
