@@ -19,7 +19,7 @@ let activeFilter = "all";
 let toastTimer;
 
 const elements = {
-  level: document.querySelector("#level"), totalXp: document.querySelector("#total-xp"), nextLevel: document.querySelector("#next-level"),
+  totalXp: document.querySelector("#total-xp"), nextLevel: document.querySelector("#next-level"),
   currentLevelXp: document.querySelector("#current-level-xp"), progressBar: document.querySelector("#progress-bar"), streak: document.querySelector("#streak"),
   streakLabel: document.querySelector("#streak-label"), completedCount: document.querySelector("#completed-count"), habitsList: document.querySelector("#habits-list"),
   questsList: document.querySelector("#quests-list"), tasksPanel: document.querySelector("#tasks-panel"), historyList: document.querySelector("#history-list"),
@@ -28,7 +28,7 @@ const elements = {
   title: document.querySelector("#task-title"), category: document.querySelector("#task-category"), type: document.querySelector("#task-type"), toast: document.querySelector("#toast"),
   exportBackup: document.querySelector("#export-backup"), backupFile: document.querySelector("#backup-file"),
   restoreEmergencyBackup: document.querySelector("#restore-emergency-backup"),
-  levelOrb: document.querySelector(".level-orb"), eucalyptus: document.querySelector("#eucalyptus"),
+  plantComposition: document.querySelector(".plant-composition"), eucalyptus: document.querySelector("#eucalyptus"),
 };
 
 function loadState() {
@@ -131,7 +131,7 @@ function renderHistory() {
 
 function renderStats() {
   const level = Math.floor(state.xp / 100) + 1, progress = state.xp % 100, streak = getStreak();
-  elements.level.textContent = level; elements.totalXp.textContent = state.xp; elements.nextLevel.textContent = level + 1;
+  elements.totalXp.textContent = state.xp; elements.nextLevel.textContent = level + 1;
   elements.currentLevelXp.textContent = progress; elements.progressBar.style.width = `${progress}%`; elements.streak.textContent = streak;
   elements.streakLabel.textContent = pluralDays(streak); elements.completedCount.textContent = state.history.length;
   renderEucalyptus(level, progress);
@@ -145,15 +145,15 @@ function renderEucalyptus(level, progress) {
   });
   const renewal = elements.eucalyptus.querySelector("[data-growth-renewal]");
   renewal.style.setProperty("--growth-opacity", level > 10 ? Math.min(.35 + ((level - 11) % 5) * .12 + progress / 500, 1) : 0);
-  elements.levelOrb.dataset.maturity = String(Math.min(Math.floor((level - 1) / 10), 3));
-  elements.levelOrb.setAttribute("aria-label", `Текущий уровень ${level}. Эвкалипт вырос до ${level < 10 ? `${level} стадии из 10` : "зрелой стадии"}, прогресс внутри уровня ${progress} процентов.`);
+  elements.plantComposition.dataset.maturity = String(Math.min(Math.floor((level - 1) / 10), 3));
+  elements.plantComposition.setAttribute("aria-label", `Текущий уровень ${level}. Эвкалипт вырос до ${level < 10 ? `${level} стадии из 10` : "зрелой стадии"}, прогресс внутри уровня ${progress} процентов.`);
 }
 
 function celebrateEucalyptus() {
-  elements.levelOrb.classList.remove("eucalyptus-celebrate");
-  void elements.levelOrb.offsetWidth;
-  elements.levelOrb.classList.add("eucalyptus-celebrate");
-  setTimeout(() => elements.levelOrb.classList.remove("eucalyptus-celebrate"), 900);
+  elements.plantComposition.classList.remove("eucalyptus-celebrate");
+  void elements.plantComposition.offsetWidth;
+  elements.plantComposition.classList.add("eucalyptus-celebrate");
+  setTimeout(() => elements.plantComposition.classList.remove("eucalyptus-celebrate"), 900);
 }
 
 function render() { renderFilters(); renderTasks(); renderHistory(); renderStats(); }
