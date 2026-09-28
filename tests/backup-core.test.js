@@ -12,7 +12,7 @@ const legacyState = {
 test("loads and versions existing unversioned state without losing fields", () => {
   const result = backup.migrateState(JSON.parse(JSON.stringify(legacyState)));
   assert.equal(result.ok, true);
-  assert.equal(result.state.dataVersion, 8);
+  assert.equal(result.state.dataVersion, 9);
   assert.equal(result.state.xp, 115);
   assert.equal(result.state.history[0].title, "Готово");
   assert.equal(result.state.tasks.find(task => task.id === "custom-1").title, "Моё задание");
@@ -20,6 +20,15 @@ test("loads and versions existing unversioned state without losing fields", () =
   assert.equal(result.state.tasks.filter(task => task.type === "habit").length, 5);
   assert.equal(result.state.userPreference, "сохраняется");
   assert.deepEqual(result.state.dailyQuest, { recentlyUsedIds: [] });
+  assert.deepEqual(result.state.unlockedRewardLevels, [2]);
+  assert.deepEqual(result.state.rewardWishlist, []);
+});
+
+test("safely migrates rewards and keeps them in backups", () => {
+  const migrated = backup.migrateState({ ...legacyState, dataVersion: 8, xp: 950 }).state;
+  assert.deepEqual(migrated.unlockedRewardLevels, [2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  migrated.rewardWishlist.push({ id: "wish-1", title: "Спа", category: "experience", level: 10 });
+  assert.deepEqual(backup.parseBackup(backup.createBackup(migrated)).state.rewardWishlist, migrated.rewardWishlist);
 });
 
 test("migrates daily quest state without changing existing progress", () => {

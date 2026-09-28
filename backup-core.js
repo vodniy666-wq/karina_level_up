@@ -4,9 +4,10 @@
   else root.KarinaBackup = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
-  const DATA_VERSION = 8, BACKUP_FORMAT_VERSION = 1, APP_ID = "karina-level-up";
+  const DATA_VERSION = 9, BACKUP_FORMAT_VERSION = 1, APP_ID = "karina-level-up";
   const VALID_CATEGORIES = new Set(["selfCare", "style", "impressions", "growth", "energy"]);
   const VALID_TYPES = new Set(["habit", "quest"]);
+  const VALID_REWARD_CATEGORIES = new Set(["small", "gift", "experience", "big"]);
   const DEFAULT_TASKS = [
     { id: "daily-morning-work", title: "Утро-ворк", category: "selfCare", xp: 5, type: "habit" },
     { id: "daily-main-workout", title: "Основная тренировка", category: "energy", xp: 10, type: "habit" },
@@ -42,6 +43,12 @@
     if (!Array.isArray(value.history) || !value.history.every(item => isValidTask(item) && typeof item.completedAt === "string" && Number.isFinite(Date.parse(item.completedAt)))) return { ok: false, error: "Некорректная история выполнений." };
     if (!Number.isInteger(value.xp) || value.xp < 0 || value.xp > Number.MAX_SAFE_INTEGER) return { ok: false, error: "Некорректное значение XP." };
     if (!isValidDailyQuest(value.dailyQuest)) return { ok: false, error: "Некорректное состояние квеста дня." };
+    if (!Array.isArray(value.unlockedRewardLevels) || !value.unlockedRewardLevels.every(level => Number.isInteger(level) && level >= 2) || new Set(value.unlockedRewardLevels).size !== value.unlockedRewardLevels.length) return { ok: false, error: "Некорректный список открытых наград." };
+    if (!Array.isArray(value.rewardWishlist) || !value.rewardWishlist.every(item => isPlainObject(item)
+      && typeof item.id === "string" && item.id.length > 0 && item.id.length <= 200
+      && typeof item.title === "string" && item.title.trim().length > 0 && item.title.length <= 100
+      && VALID_REWARD_CATEGORIES.has(item.category)
+      && Number.isInteger(item.level) && item.level >= 2 && item.level <= 10000)) return { ok: false, error: "Некорректный wishlist наград." };
     const ids = value.tasks.map(task => task.id);
     if (new Set(ids).size !== ids.length) return { ok: false, error: "Идентификаторы заданий повторяются." };
     return { ok: true };
@@ -49,7 +56,7 @@
 
   function migrateState(value) {
     if (!isPlainObject(value)) return { ok: false, error: "Состояние должно быть объектом." };
-    if (value.dataVersion !== undefined && ![1, 2, 3, 4, 5, 6, 7, DATA_VERSION].includes(value.dataVersion)) return { ok: false, error: "Версия данных не поддерживается." };
+    if (value.dataVersion !== undefined && ![1, 2, 3, 4, 5, 6, 7, 8, DATA_VERSION].includes(value.dataVersion)) return { ok: false, error: "Версия данных не поддерживается." };
     if (!Array.isArray(value.tasks) || !Array.isArray(value.history)) return { ok: false, error: "Некорректный список заданий." };
     const wasLegacy = value.dataVersion !== DATA_VERSION;
     const normalize = item => ({ ...item, type: VALID_TYPES.has(item.type) ? item.type : "quest" });
@@ -76,7 +83,14 @@
     const dailyQuest = isPlainObject(value.dailyQuest)
       ? { ...value.dailyQuest, recentlyUsedIds: Array.isArray(value.dailyQuest.recentlyUsedIds) ? value.dailyQuest.recentlyUsedIds : [] }
       : { recentlyUsedIds: [] };
-    const state = { ...value, tasks, history, dailyQuest, dataVersion: DATA_VERSION };
+    const currentLevel = Math.floor((Number.isInteger(value.xp) ? value.xp : 0) / 100) + 1;
+    const legacyUnlocked = [];
+    for (let level = 2; level <= currentLevel; level += 1) {
+      if (level <= 10 || level % 5 === 0) legacyUnlocked.push(level);
+    }
+    const unlockedRewardLevels = Array.isArray(value.unlockedRewardLevels) ? [...new Set(value.unlockedRewardLevels)] : legacyUnlocked;
+    const rewardWishlist = Array.isArray(value.rewardWishlist) ? value.rewardWishlist.map(item => ({ ...item })) : [];
+    const state = { ...value, tasks, history, dailyQuest, unlockedRewardLevels, rewardWishlist, dataVersion: DATA_VERSION };
     const validation = validateState(state);
     return validation.ok ? { ok: true, state } : validation;
   }

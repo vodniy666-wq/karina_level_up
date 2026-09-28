@@ -21,11 +21,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20260928-4" />
-    <script src="backup-core.js?v=20260928-1" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20260928-5" />
+    <script src="reward-core.js?v=20260928-1" defer></script>
+    <script src="backup-core.js?v=20260928-2" defer></script>
     <script src="task-core.js?v=20260910-1" defer></script>
     <script src="daily-quest-core.js?v=20260928-1" defer></script>
-    <script src="app.js?v=20260928-3" defer></script>
+    <script src="app.js?v=20260928-4" defer></script>
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -63,6 +64,7 @@
             <div class="progress-label"><span>До уровня <b id="next-level">2</b></span><span><b id="current-level-xp">0</b> / 100 XP</span></div>
             <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
           </div>
+          <div class="next-reward" aria-live="polite"><span>Следующая награда</span><strong id="next-reward-title">Уровень 2</strong><small id="next-reward-description"></small><small id="next-reward-xp"></small></div>
         </article>
       </section>
 
@@ -90,6 +92,11 @@
           <div class="empty-state small" id="empty-history"><span>❧</span><h3>Победы впереди</h3><p>Выполненные задания появятся здесь.</p></div>
         </aside>
       </section>
+      <section class="wishlist-panel" aria-labelledby="wishlist-title">
+        <div class="wishlist-heading"><div><span class="eyebrow">БУДУЩИЕ РАДОСТИ</span><h2 id="wishlist-title">Wishlist наград</h2><p>Идеи без обязательств — выбери любую, когда придёт подходящий момент.</p></div><button class="button button-ghost" id="add-wish" type="button">＋ Добавить хотелку</button></div>
+        <div class="wishlist-list" id="wishlist-list"></div>
+        <p class="wishlist-empty" id="wishlist-empty">Здесь можно бережно собрать подарки и впечатления на будущие уровни.</p>
+      </section>
       <section class="backup-panel" aria-labelledby="backup-title">
         <div class="backup-copy"><span class="eyebrow">БЕЗОПАСНОСТЬ ПРОГРЕССА</span><h2 id="backup-title">Данные и резервная копия</h2><p>Сохрани задания, историю и XP в файл или восстанови их на этом устройстве.</p></div>
         <div class="backup-actions">
@@ -114,6 +121,15 @@
         <div class="dialog-actions"><button class="button button-ghost" id="cancel-dialog" type="button">Отмена</button><button class="button button-primary" type="submit">Добавить задание</button></div>
       </form>
     </dialog>
-    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <dialog id="wishlist-dialog" aria-labelledby="wishlist-dialog-title">
+      <form id="wishlist-form" method="dialog">
+        <div class="dialog-header"><div><span class="eyebrow">БУДУЩАЯ НАГРАДА</span><h2 id="wishlist-dialog-title">Добавить хотелку</h2></div><button class="icon-button" id="close-wishlist-dialog" type="button" aria-label="Закрыть">×</button></div>
+        <label>Название хотелки<input name="title" type="text" maxlength="100" placeholder="Например, день в спа" required autocomplete="off" /></label>
+        <label>Категория<select name="category" required><option value="small">Маленькая приятность</option><option value="gift">Подарок</option><option value="experience">Впечатление</option><option value="big">Большая хотелка</option></select></label>
+        <label>Примерный уровень или milestone<input name="level" type="number" min="2" max="10000" value="5" required inputmode="numeric" /></label>
+        <div class="dialog-actions"><button class="button button-ghost" id="cancel-wishlist-dialog" type="button">Отмена</button><button class="button button-primary" type="submit">Сохранить</button></div>
+      </form>
+    </dialog>
+    <div class="toast" id="toast" role="status" aria-live="polite"><strong id="toast-title"></strong><span id="toast-message"></span></div>
   </body>
 </html>

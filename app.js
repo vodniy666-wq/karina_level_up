@@ -4,6 +4,7 @@ const MAX_LOCAL_BACKUPS = 5;
 const backupTools = globalThis.KarinaBackup;
 const taskTools = globalThis.KarinaTasks;
 const dailyQuestTools = globalThis.KarinaDailyQuests;
+const rewardTools = globalThis.KarinaRewards;
 // Legacy key containing the safety copy made before the retired reset of 9 September 2026.
 const PRE_RESET_EMERGENCY_BACKUP_KEY = `${STORAGE_KEY}-reset-real-use-start-2026-09-09-emergency-backup`;
 
@@ -29,6 +30,9 @@ const elements = {
   exportBackup: document.querySelector("#export-backup"), backupFile: document.querySelector("#backup-file"),
   restoreEmergencyBackup: document.querySelector("#restore-emergency-backup"),
   plantComposition: document.querySelector(".plant-composition"), eucalyptus: document.querySelector("#eucalyptus"),
+  nextRewardTitle: document.querySelector("#next-reward-title"), nextRewardDescription: document.querySelector("#next-reward-description"), nextRewardXp: document.querySelector("#next-reward-xp"),
+  wishlistList: document.querySelector("#wishlist-list"), wishlistEmpty: document.querySelector("#wishlist-empty"), wishlistDialog: document.querySelector("#wishlist-dialog"), wishlistForm: document.querySelector("#wishlist-form"),
+  toastTitle: document.querySelector("#toast-title"), toastMessage: document.querySelector("#toast-message"),
 };
 
 function loadState() {
@@ -45,7 +49,7 @@ function loadState() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(restored)); } catch (error) { console.warn("Не удалось восстановить сохранение", error); }
     return restored;
   }
-  return { dataVersion: backupTools.DATA_VERSION, tasks: backupTools.DEFAULT_TASKS.map(task => ({ ...task })), history: [], xp: 0, dailyQuest: { recentlyUsedIds: [] } };
+  return { dataVersion: backupTools.DATA_VERSION, tasks: backupTools.DEFAULT_TASKS.map(task => ({ ...task })), history: [], xp: 0, dailyQuest: { recentlyUsedIds: [] }, unlockedRewardLevels: [], rewardWishlist: [] };
 }
 
 function readEmergencyBackup() {
@@ -125,7 +129,18 @@ function renderStats() {
   const level = Math.floor(state.xp / 100) + 1, progress = state.xp % 100;
   elements.totalXp.textContent = state.xp; elements.nextLevel.textContent = level + 1;
   elements.currentLevelXp.textContent = progress; elements.progressBar.style.width = `${progress}%`;
+  const reward = rewardTools.nextReward(level);
+  const xpRemaining = (reward.level - 1) * 100 - state.xp;
+  elements.nextRewardTitle.textContent = `Уровень ${reward.level}`;
+  elements.nextRewardDescription.textContent = reward.description;
+  elements.nextRewardXp.textContent = `Осталось ${xpRemaining} XP`;
   renderEucalyptus(level, progress);
+}
+
+const rewardCategoryNames = { small: "Маленькая приятность", gift: "Подарок", experience: "Впечатление", big: "Большая хотелка" };
+function renderWishlist() {
+  elements.wishlistList.innerHTML = state.rewardWishlist.map(item => `<article class="wish-item"><strong>${escapeHtml(item.title)}</strong><span class="wish-meta">${rewardCategoryNames[item.category]} · уровень ${item.level}</span><button class="wish-delete" data-delete-wish="${escapeHtml(item.id)}" type="button" aria-label="Удалить хотелку «${escapeHtml(item.title)}»">×</button></article>`).join("");
+  elements.wishlistEmpty.hidden = state.rewardWishlist.length > 0;
 }
 
 function renderEucalyptus(level, progress) {
@@ -147,8 +162,19 @@ function celebrateEucalyptus() {
   setTimeout(() => elements.plantComposition.classList.remove("eucalyptus-celebrate"), 900);
 }
 
-function render() { renderFilters(); renderTasks(); renderHistory(); renderStats(); }
-function showToast(message) { clearTimeout(toastTimer); elements.toast.textContent = message; elements.toast.classList.add("show"); toastTimer = setTimeout(() => elements.toast.classList.remove("show"), 2600); }
+function render() { renderFilters(); renderTasks(); renderHistory(); renderStats(); renderWishlist(); }
+function showToast(message, title = "") { clearTimeout(toastTimer); elements.toastTitle.textContent = title; elements.toastTitle.hidden = !title; elements.toastMessage.textContent = message; elements.toast.classList.add("show"); toastTimer = setTimeout(() => elements.toast.classList.remove("show"), title ? 4200 : 2600); }
+
+function unlockReachedReward(previousLevel, newLevel) {
+  const unlocked = new Set(state.unlockedRewardLevels);
+  const newlyUnlocked = [];
+  for (let level = previousLevel + 1; level <= newLevel; level += 1) {
+    const reward = rewardTools.rewardForLevel(level);
+    if (reward && !unlocked.has(level)) { unlocked.add(level); newlyUnlocked.push(reward); }
+  }
+  state.unlockedRewardLevels = [...unlocked].sort((a, b) => a - b);
+  return newlyUnlocked[newlyUnlocked.length - 1] || null;
+}
 
 function isIosDevice() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent)
@@ -241,19 +267,21 @@ function completeTask(id) {
   const previousLevel = Math.floor(state.xp / 100) + 1;
   const result = taskTools.complete(state, id);
   if (!result.ok) { if (result.reason === "already-completed") showToast("Эта привычка уже выполнена сегодня ✓"); return; }
-  state = result.state; const task = result.task; saveState(); render();
+  state = result.state; const task = result.task;
   const newLevel = Math.floor(state.xp / 100) + 1;
+  const reward = unlockReachedReward(previousLevel, newLevel); saveState(); render();
   celebrateEucalyptus();
-  showToast(newLevel > previousLevel ? `Новый уровень — ${newLevel}!` : `Задание выполнено: +${task.xp} XP`);
+  showToast(reward ? reward.description : newLevel > previousLevel ? `Новый уровень — ${newLevel}!` : `Задание выполнено: +${task.xp} XP`, reward ? "Награда разблокирована" : "");
 }
 
 function completeDailyQuest() {
   const previousLevel = Math.floor(state.xp / 100) + 1;
   const result = dailyQuestTools.complete(state);
   if (!result.ok) { showToast("Сегодняшний квест уже выполнен ✓"); return; }
-  state = result.state; saveState(); render(); celebrateEucalyptus();
+  state = result.state;
   const newLevel = Math.floor(state.xp / 100) + 1;
-  showToast(newLevel > previousLevel ? `Новый уровень — ${newLevel}!` : `Квест дня выполнен: +${result.quest.xp} XP`);
+  const reward = unlockReachedReward(previousLevel, newLevel); saveState(); render(); celebrateEucalyptus();
+  showToast(reward ? reward.description : newLevel > previousLevel ? `Новый уровень — ${newLevel}!` : `Квест дня выполнен: +${result.quest.xp} XP`, reward ? "Награда разблокирована" : "");
 }
 
 function undoHabit(id) {
@@ -289,5 +317,19 @@ elements.exportBackup.addEventListener("click", exportBackup);
 elements.backupFile.addEventListener("change", () => importBackup(elements.backupFile.files[0]));
 elements.restoreEmergencyBackup.addEventListener("click", restoreEmergencyProgress);
 elements.restoreEmergencyBackup.hidden = readEmergencyBackup() === null;
+
+document.querySelector("#add-wish").addEventListener("click", () => elements.wishlistDialog.showModal());
+document.querySelector("#close-wishlist-dialog").addEventListener("click", () => elements.wishlistDialog.close());
+document.querySelector("#cancel-wishlist-dialog").addEventListener("click", () => elements.wishlistDialog.close());
+elements.wishlistDialog.addEventListener("click", event => { if (event.target === elements.wishlistDialog) elements.wishlistDialog.close(); });
+elements.wishlistForm.addEventListener("submit", event => {
+  event.preventDefault(); const data = new FormData(elements.wishlistForm); const title = data.get("title").trim(); const level = Number(data.get("level"));
+  if (!title || !Number.isInteger(level) || level < 2 || level > 10000) return;
+  state.rewardWishlist.unshift({ id: makeId(), title, category: data.get("category"), level }); saveState(); renderWishlist(); elements.wishlistForm.reset(); elements.wishlistDialog.close(); showToast("Хотелка добавлена в список");
+});
+elements.wishlistList.addEventListener("click", event => {
+  const button = event.target.closest("[data-delete-wish]"); if (!button) return;
+  state.rewardWishlist = state.rewardWishlist.filter(item => item.id !== button.dataset.deleteWish); saveState(); renderWishlist(); showToast("Хотелка удалена");
+});
 
 render();
