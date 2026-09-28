@@ -12,13 +12,26 @@ const legacyState = {
 test("loads and versions existing unversioned state without losing fields", () => {
   const result = backup.migrateState(JSON.parse(JSON.stringify(legacyState)));
   assert.equal(result.ok, true);
-  assert.equal(result.state.dataVersion, 7);
+  assert.equal(result.state.dataVersion, 8);
   assert.equal(result.state.xp, 115);
   assert.equal(result.state.history[0].title, "Готово");
   assert.equal(result.state.tasks.find(task => task.id === "custom-1").title, "Моё задание");
   assert.equal(result.state.tasks.find(task => task.id === "custom-1").type, "quest");
   assert.equal(result.state.tasks.filter(task => task.type === "habit").length, 5);
   assert.equal(result.state.userPreference, "сохраняется");
+  assert.deepEqual(result.state.dailyQuest, { recentlyUsedIds: [] });
+});
+
+test("migrates daily quest state without changing existing progress", () => {
+  const result = backup.migrateState({
+    ...legacyState,
+    dataVersion: 7,
+    dailyQuest: { date: "2026-09-27", questId: "photo-hunt", recentlyUsedIds: ["photo-hunt"], completedOn: "2026-09-27" },
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.state.xp, 115);
+  assert.deepEqual(result.state.history, legacyState.history.map(item => ({ ...item, type: "quest" })));
+  assert.deepEqual(result.state.dailyQuest, { date: "2026-09-27", questId: "photo-hunt", recentlyUsedIds: ["photo-hunt"], completedOn: "2026-09-27" });
 });
 
 test("adds Clean Day to existing saves and preserves it in backups", () => {

@@ -3,6 +3,7 @@ const LOCAL_BACKUPS_KEY = `${STORAGE_KEY}-backups`;
 const MAX_LOCAL_BACKUPS = 5;
 const backupTools = globalThis.KarinaBackup;
 const taskTools = globalThis.KarinaTasks;
+const dailyQuestTools = globalThis.KarinaDailyQuests;
 // Legacy key containing the safety copy made before the retired reset of 9 September 2026.
 const PRE_RESET_EMERGENCY_BACKUP_KEY = `${STORAGE_KEY}-reset-real-use-start-2026-09-09-emergency-backup`;
 
@@ -20,10 +21,9 @@ let toastTimer;
 
 const elements = {
   totalXp: document.querySelector("#total-xp"), nextLevel: document.querySelector("#next-level"),
-  currentLevelXp: document.querySelector("#current-level-xp"), progressBar: document.querySelector("#progress-bar"), streak: document.querySelector("#streak"),
-  streakLabel: document.querySelector("#streak-label"), completedCount: document.querySelector("#completed-count"), habitsList: document.querySelector("#habits-list"),
+  currentLevelXp: document.querySelector("#current-level-xp"), progressBar: document.querySelector("#progress-bar"), habitsList: document.querySelector("#habits-list"),
   questsList: document.querySelector("#quests-list"), tasksPanel: document.querySelector("#tasks-panel"), historyList: document.querySelector("#history-list"),
-  emptyHabits: document.querySelector("#empty-habits"), emptyQuests: document.querySelector("#empty-quests"), emptyHistory: document.querySelector("#empty-history"),
+  emptyHabits: document.querySelector("#empty-habits"), emptyHistory: document.querySelector("#empty-history"),
   filters: document.querySelector("#category-filters"), dialog: document.querySelector("#task-dialog"), form: document.querySelector("#task-form"),
   title: document.querySelector("#task-title"), category: document.querySelector("#task-category"), type: document.querySelector("#task-type"), toast: document.querySelector("#toast"),
   exportBackup: document.querySelector("#export-backup"), backupFile: document.querySelector("#backup-file"),
@@ -45,7 +45,7 @@ function loadState() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(restored)); } catch (error) { console.warn("Не удалось восстановить сохранение", error); }
     return restored;
   }
-  return { dataVersion: backupTools.DATA_VERSION, tasks: backupTools.DEFAULT_TASKS.map(task => ({ ...task })), history: [], xp: 0 };
+  return { dataVersion: backupTools.DATA_VERSION, tasks: backupTools.DEFAULT_TASKS.map(task => ({ ...task })), history: [], xp: 0, dailyQuest: { recentlyUsedIds: [] } };
 }
 
 function readEmergencyBackup() {
@@ -82,26 +82,6 @@ function saveState() {
 function makeId() { return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`; }
 function escapeHtml(value) { const node = document.createElement("span"); node.textContent = value; return node.innerHTML; }
 
-function getStreak() {
-  const days = [...new Set(state.history.map(item => new Date(item.completedAt).toLocaleDateString("sv-SE")))].sort().reverse();
-  if (!days.length) return 0;
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const latest = new Date(`${days[0]}T00:00:00`);
-  const gap = Math.round((today - latest) / 86400000);
-  if (gap > 1) return 0;
-  let streak = 1;
-  for (let index = 1; index < days.length; index += 1) {
-    if ((new Date(`${days[index - 1]}T00:00:00`) - new Date(`${days[index]}T00:00:00`)) / 86400000 === 1) streak += 1;
-    else break;
-  }
-  return streak;
-}
-
-function pluralDays(number) {
-  const lastTwo = number % 100, last = number % 10;
-  return lastTwo >= 11 && lastTwo <= 14 ? "дней" : last === 1 ? "день" : last >= 2 && last <= 4 ? "дня" : "дней";
-}
-
 function renderFilters() {
   elements.filters.innerHTML = [{ id: "all", name: "Все", icon: "" }, ...Object.entries(categories).map(([id, value]) => ({ id, ...value }))]
     .map(item => `<button class="filter-button ${activeFilter === item.id ? "active" : ""}" data-filter="${item.id}" type="button">${item.icon} ${item.name}</button>`).join("");
@@ -116,11 +96,23 @@ function renderTasks() {
       <span class="xp-badge">+${task.xp} XP</span>
       <button class="delete-button" data-delete="${task.id}" type="button" aria-label="Удалить задание «${escapeHtml(task.title)}»">×</button>
     </article>`; };
-  const habits = tasks.filter(task => task.type === "habit"), quests = tasks.filter(task => task.type === "quest");
+  const habits = tasks.filter(task => task.type === "habit");
   elements.habitsList.innerHTML = habits.map(card).join("");
-  elements.questsList.innerHTML = quests.map(card).join("");
   elements.emptyHabits.hidden = habits.length > 0;
-  elements.emptyQuests.hidden = quests.length > 0;
+  renderDailyQuest();
+}
+
+function renderDailyQuest() {
+  const selection = dailyQuestTools.selectForToday(state);
+  if (selection.changed) { state = selection.state; saveState(); }
+  const quest = selection.quest;
+  const completed = state.dailyQuest.completedOn === dailyQuestTools.localDateKey();
+  elements.questsList.innerHTML = `
+    <article class="task-card daily-quest-card ${completed ? "completed-today" : ""}">
+      <button class="complete-button" data-complete-daily type="button" ${completed ? "disabled" : ""} aria-label="${completed ? "Квест дня выполнен" : `Выполнить «${escapeHtml(quest.title)}»`}">✓</button>
+      <div class="task-main"><h3>${escapeHtml(quest.title)}</h3><p class="task-subtitle">${escapeHtml(quest.subtitle)}</p><div class="task-meta"><span class="type-badge type-quest">Квест дня</span>${completed ? `<span class="done-label">Сегодня выполнено</span>` : ""}</div></div>
+      <span class="xp-badge">+${quest.xp} XP</span>
+    </article>`;
 }
 
 function renderHistory() {
@@ -130,10 +122,9 @@ function renderHistory() {
 }
 
 function renderStats() {
-  const level = Math.floor(state.xp / 100) + 1, progress = state.xp % 100, streak = getStreak();
+  const level = Math.floor(state.xp / 100) + 1, progress = state.xp % 100;
   elements.totalXp.textContent = state.xp; elements.nextLevel.textContent = level + 1;
-  elements.currentLevelXp.textContent = progress; elements.progressBar.style.width = `${progress}%`; elements.streak.textContent = streak;
-  elements.streakLabel.textContent = pluralDays(streak); elements.completedCount.textContent = state.history.length;
+  elements.currentLevelXp.textContent = progress; elements.progressBar.style.width = `${progress}%`;
   renderEucalyptus(level, progress);
 }
 
@@ -256,6 +247,15 @@ function completeTask(id) {
   showToast(newLevel > previousLevel ? `Новый уровень — ${newLevel}!` : `Задание выполнено: +${task.xp} XP`);
 }
 
+function completeDailyQuest() {
+  const previousLevel = Math.floor(state.xp / 100) + 1;
+  const result = dailyQuestTools.complete(state);
+  if (!result.ok) { showToast("Сегодняшний квест уже выполнен ✓"); return; }
+  state = result.state; saveState(); render(); celebrateEucalyptus();
+  const newLevel = Math.floor(state.xp / 100) + 1;
+  showToast(newLevel > previousLevel ? `Новый уровень — ${newLevel}!` : `Квест дня выполнен: +${result.quest.xp} XP`);
+}
+
 function undoHabit(id) {
   if (!confirm("Отменить выполнение этой привычки за сегодня?")) return;
   const result = taskTools.undoHabit(state, id);
@@ -266,7 +266,9 @@ function undoHabit(id) {
 
 elements.filters.addEventListener("click", event => { const button = event.target.closest("[data-filter]"); if (button) { activeFilter = button.dataset.filter; renderFilters(); renderTasks(); } });
 elements.tasksPanel.addEventListener("click", event => {
+  const dailyComplete = event.target.closest("[data-complete-daily]");
   const complete = event.target.closest("[data-complete]"), undo = event.target.closest("[data-undo]"), remove = event.target.closest("[data-delete]");
+  if (dailyComplete) completeDailyQuest();
   if (complete) completeTask(complete.dataset.complete);
   if (undo) undoHabit(undo.dataset.undo);
   if (remove && confirm("Удалить это задание?")) { state.tasks = state.tasks.filter(task => task.id !== remove.dataset.delete); saveState(); renderTasks(); showToast("Задание удалено"); }
