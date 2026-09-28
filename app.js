@@ -23,8 +23,8 @@ let toastTimer;
 const elements = {
   totalXp: document.querySelector("#total-xp"), nextLevel: document.querySelector("#next-level"),
   currentLevelXp: document.querySelector("#current-level-xp"), progressBar: document.querySelector("#progress-bar"), habitsList: document.querySelector("#habits-list"),
-  questsList: document.querySelector("#quests-list"), tasksPanel: document.querySelector("#tasks-panel"), historyList: document.querySelector("#history-list"),
-  emptyHabits: document.querySelector("#empty-habits"), emptyHistory: document.querySelector("#empty-history"),
+  questsList: document.querySelector("#quests-list"), tasksPanel: document.querySelector("#tasks-panel"),
+  emptyHabits: document.querySelector("#empty-habits"),
   filters: document.querySelector("#category-filters"), dialog: document.querySelector("#task-dialog"), form: document.querySelector("#task-form"),
   title: document.querySelector("#task-title"), category: document.querySelector("#task-category"), type: document.querySelector("#task-type"), toast: document.querySelector("#toast"),
   exportBackup: document.querySelector("#export-backup"), backupFile: document.querySelector("#backup-file"),
@@ -119,12 +119,6 @@ function renderDailyQuest() {
     </article>`;
 }
 
-function renderHistory() {
-  elements.historyList.innerHTML = state.history.slice(0, 8).map(item => `
-    <article class="history-item"><span class="history-check">✓</span><div class="history-copy"><h3>${escapeHtml(item.title)}</h3><div><span class="type-badge type-${item.type}">${item.type === "habit" ? "Привычка" : "Квест"}</span> <time datetime="${item.completedAt}">${new Intl.DateTimeFormat("ru-RU", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" }).format(new Date(item.completedAt))}</time></div></div><span class="history-xp">+${item.xp} XP</span></article>`).join("");
-  elements.emptyHistory.hidden = state.history.length > 0;
-}
-
 function renderStats() {
   const level = Math.floor(state.xp / 100) + 1, progress = state.xp % 100;
   elements.totalXp.textContent = state.xp; elements.nextLevel.textContent = level + 1;
@@ -162,7 +156,7 @@ function celebrateEucalyptus() {
   setTimeout(() => elements.plantComposition.classList.remove("eucalyptus-celebrate"), 900);
 }
 
-function render() { renderFilters(); renderTasks(); renderHistory(); renderStats(); renderWishlist(); }
+function render() { renderFilters(); renderTasks(); renderStats(); renderWishlist(); }
 function showToast(message, title = "") { clearTimeout(toastTimer); elements.toastTitle.textContent = title; elements.toastTitle.hidden = !title; elements.toastMessage.textContent = message; elements.toast.classList.add("show"); toastTimer = setTimeout(() => elements.toast.classList.remove("show"), title ? 4200 : 2600); }
 
 function unlockReachedReward(previousLevel, newLevel) {
