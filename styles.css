@@ -30,7 +30,7 @@ button { cursor: pointer; }
 .button-primary { color: #fffdf7; background: var(--sage-dark); box-shadow: 0 7px 18px rgba(79, 101, 73, .17); }
 .button-primary:hover { background: #53684f; }
 .button-ghost { background: #f1ede2; border: 1px solid var(--line); }
-.hero { min-height: 300px; display: grid; place-items: center; padding: 22px; margin: 34px 0 24px; border: 1px solid var(--line); border-radius: 26px; overflow: hidden; position: relative; isolation: isolate; background: linear-gradient(125deg, rgba(255, 253, 247, .98), rgba(235, 237, 220, .96)); box-shadow: var(--shadow); }
+.hero { min-height: 280px; display: grid; place-items: center; padding: 18px; margin: 34px 0 24px; border: 1px solid var(--line); border-radius: 26px; overflow: hidden; position: relative; isolation: isolate; background: linear-gradient(125deg, rgba(255, 253, 247, .98), rgba(235, 237, 220, .96)); box-shadow: var(--shadow); }
 .hero::before { content: ""; position: absolute; width: 390px; height: 240px; left: 50%; top: 50%; transform: translate(-50%, -50%); border: 1px solid rgba(112, 130, 101, .12); border-radius: 50%; box-shadow: 0 0 0 34px rgba(129, 148, 116, .035); z-index: -1; }
 .botanical { position: absolute; fill: none; stroke: #75876d; stroke-width: 1.2; opacity: .2; pointer-events: none; }
 .botanical .leaf { fill: #aab797; stroke-width: .8; }
@@ -39,10 +39,9 @@ button { cursor: pointer; }
 .eyebrow { display: block; color: var(--sage-dark); font-size: 11px; font-weight: 800; letter-spacing: 2.2px; margin-bottom: 11px; }
 h1, h2, h3, p { margin-top: 0; }
 h1 { font-size: clamp(38px, 5vw, 59px); line-height: 1.06; margin: 0; letter-spacing: -2.6px; color: #455344; }
-.level-orb { width: 300px; height: 255px; position: relative; z-index: 1; }
-.level-orb::before { content: ""; position: absolute; width: 176px; height: 24px; left: 50%; bottom: 7px; transform: translateX(-50%); border-radius: 50%; background: rgba(90, 110, 80, .09); filter: blur(7px); }
-.level-content { position: absolute; z-index: 2; left: 18px; bottom: 26px; display: inline-flex; align-items: baseline; gap: 5px; padding: 8px 12px; border: 1px solid rgba(103, 126, 94, .22); border-radius: 999px; background: rgba(255, 253, 247, .9); box-shadow: 0 7px 22px rgba(91, 112, 82, .09); }
-.eucalyptus { position: absolute; z-index: 1; left: 50%; bottom: 5px; width: 190px; height: 250px; transform: translateX(-50%); overflow: visible; pointer-events: none; }
+.plant-composition { width: 280px; height: 245px; position: relative; z-index: 1; }
+.plant-composition::before { content: ""; position: absolute; width: 176px; height: 24px; left: 50%; bottom: 7px; transform: translateX(-50%); border-radius: 50%; background: rgba(90, 110, 80, .09); filter: blur(7px); }
+.eucalyptus { position: absolute; z-index: 1; left: 50%; bottom: 5px; width: 185px; height: 240px; transform: translateX(-50%); overflow: visible; pointer-events: none; }
 .growth-part { opacity: var(--growth-opacity, 0); transform-box: fill-box; transform-origin: bottom center; transition: opacity .45s ease, transform .55s ease; }
 .growth-part[style*="--growth-opacity: 0"] { transform: translateY(3px) scale(.96); }
 .eucalyptus-stem, .eucalyptus-twig { fill: none; stroke: #64785f; stroke-linecap: round; stroke-linejoin: round; }
@@ -51,13 +50,11 @@ h1 { font-size: clamp(38px, 5vw, 59px); line-height: 1.06; margin: 0; letter-spa
 .eucalyptus-leaf { fill: rgba(132, 155, 119, .44); stroke: rgba(82, 108, 76, .72); stroke-width: .75; }
 .eucalyptus-bud { fill: #a5aa78; stroke: #738064; stroke-width: .7; }
 .eucalyptus-bloom { fill: #e7dbc0; stroke: #84916f; stroke-width: .9; stroke-linecap: round; }
-.level-orb[data-maturity="2"] .eucalyptus-leaf, .level-orb[data-maturity="3"] .eucalyptus-leaf { fill: rgba(118, 146, 105, .52); }
+.plant-composition[data-maturity="2"] .eucalyptus-leaf, .plant-composition[data-maturity="3"] .eucalyptus-leaf { fill: rgba(118, 146, 105, .52); }
 .eucalyptus-celebrate .eucalyptus { animation: eucalyptus-sway .8s ease-out; }
 .eucalyptus-celebrate .eucalyptus-renewal { animation: eucalyptus-leaf-in .75s ease-out; }
 @keyframes eucalyptus-sway { 35% { transform: translateX(-50%) rotate(1.4deg); } 70% { transform: translateX(-50%) rotate(-.7deg); } }
 @keyframes eucalyptus-leaf-in { from { opacity: 0; transform: scale(.82); } }
-.level-orb span { font-size: 10px; font-weight: 700; letter-spacing: .5px; color: var(--sage-dark); }
-.level-orb strong { font-size: 18px; line-height: 1; color: #53674f; }
 .stats-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 16px; margin-bottom: 46px; }
 .stat-card { min-height: 126px; display: flex; align-items: center; gap: 14px; padding: 23px; background: rgba(255, 253, 247, .92); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
 .stat-icon { width: 44px; height: 44px; display: grid; place-items: center; flex: none; border-radius: 50%; font-size: 18px; }
@@ -157,9 +154,8 @@ input:focus, select:focus { border-color: var(--sage); box-shadow: 0 0 0 3px rgb
   .topbar { display: none; }
   .hero { min-height: 210px; padding: 10px; margin-top: 12px; }
   .hero::before { width: 290px; height: 170px; }
-  .level-orb { width: 240px; height: 190px; }
+  .plant-composition { width: 240px; height: 190px; }
   .eucalyptus { width: 145px; height: 190px; }
-  .level-content { left: 14px; bottom: 18px; padding: 7px 10px; }
   .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 35px; }
   .stat-card { padding: 15px; min-height: 110px; }
   .xp-card { display: grid; grid-template-columns: auto 1fr; }
@@ -183,11 +179,9 @@ input:focus, select:focus { border-color: var(--sage); box-shadow: 0 0 0 3px rgb
   .hero { min-height: 194px; margin: 10px 0 14px; padding: 8px; border-radius: 20px; }
   .botanical-left { width: 100px; }
   .botanical-right { display: none; }
-  .level-orb { width: 220px; height: 178px; }
-  .level-orb::before { width: 138px; bottom: 5px; }
+  .plant-composition { width: 220px; height: 178px; }
+  .plant-composition::before { width: 138px; bottom: 5px; }
   .eucalyptus { width: 136px; height: 178px; }
-  .level-orb span { font-size: 9px; }
-  .level-orb strong { font-size: 16px; }
   .stats-grid { gap: 8px; margin-bottom: 28px; }
   .stat-card { min-width: 0; min-height: 80px; padding: 12px; border-radius: 15px; gap: 9px; }
   .xp-card { min-height: 90px; grid-template-columns: 36px minmax(0, 1fr); }
