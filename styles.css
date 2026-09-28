@@ -41,16 +41,23 @@ button { cursor: pointer; }
 h1, h2, h3, p { margin-top: 0; }
 h1 { font-size: clamp(38px, 5vw, 59px); line-height: 1.06; margin: 0; letter-spacing: -2.6px; color: #455344; }
 .hero-copy p { max-width: 420px; margin: 16px 0 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
-.level-orb { width: 178px; height: 178px; flex: 0 0 178px; margin-left: 35px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 1; border-radius: 50%; background: #fbfaf2; border: 1px solid rgba(103, 126, 94, .3); box-shadow: 0 0 0 11px rgba(133, 154, 120, .06), 0 16px 38px rgba(91, 112, 82, .12); }
+.level-orb { width: 218px; height: 178px; flex: 0 0 218px; margin-left: 35px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 1; border-radius: 50%; background: #fbfaf2; border: 1px solid rgba(103, 126, 94, .3); box-shadow: 0 0 0 11px rgba(133, 154, 120, .06), 0 16px 38px rgba(91, 112, 82, .12); }
 .level-orb::before { content: ""; inset: 8px; position: absolute; border: 1px dashed rgba(84, 108, 78, .25); border-radius: 50%; }
-.level-content { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.level-sprig { position: absolute; z-index: 0; top: 29px; width: 40px; height: 112px; overflow: visible; pointer-events: none; }
-.level-sprig-left { left: 15px; transform: rotate(-8deg); }
-.level-sprig-right { right: 15px; transform: scaleX(-1) rotate(-8deg); }
-.level-stem, .level-twig { fill: none; stroke: rgba(91, 116, 83, .7); stroke-linecap: round; stroke-linejoin: round; }
-.level-stem { stroke-width: 1.1; }
-.level-twig { stroke-width: .8; }
-.level-leaf { fill: rgba(143, 163, 130, .3); stroke: rgba(91, 116, 83, .54); stroke-width: .7; }
+.level-content { position: relative; z-index: 2; width: 46%; margin-right: 48%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.eucalyptus { position: absolute; z-index: 1; right: 8px; bottom: 6px; width: 112px; height: 158px; overflow: visible; pointer-events: none; }
+.growth-part { opacity: var(--growth-opacity, 0); transform-box: fill-box; transform-origin: bottom center; transition: opacity .45s ease, transform .55s ease; }
+.growth-part[style*="--growth-opacity: 0"] { transform: translateY(3px) scale(.96); }
+.eucalyptus-stem, .eucalyptus-twig { fill: none; stroke: #64785f; stroke-linecap: round; stroke-linejoin: round; }
+.eucalyptus-stem { stroke-width: 1.6; }
+.eucalyptus-twig { stroke-width: 1.1; }
+.eucalyptus-leaf { fill: rgba(132, 155, 119, .44); stroke: rgba(82, 108, 76, .72); stroke-width: .75; }
+.eucalyptus-bud { fill: #a5aa78; stroke: #738064; stroke-width: .7; }
+.eucalyptus-bloom { fill: #e7dbc0; stroke: #84916f; stroke-width: .9; stroke-linecap: round; }
+.level-orb[data-maturity="2"] .eucalyptus-leaf, .level-orb[data-maturity="3"] .eucalyptus-leaf { fill: rgba(118, 146, 105, .52); }
+.eucalyptus-celebrate .eucalyptus { animation: eucalyptus-sway .8s ease-out; }
+.eucalyptus-celebrate .eucalyptus-renewal { animation: eucalyptus-leaf-in .75s ease-out; }
+@keyframes eucalyptus-sway { 35% { transform: rotate(1.4deg); } 70% { transform: rotate(-.7deg); } }
+@keyframes eucalyptus-leaf-in { from { opacity: 0; transform: scale(.82); } }
 .level-orb span { font-size: 9px; letter-spacing: 2px; color: var(--sage-dark); }
 .level-orb strong { font-size: 64px; line-height: 1.05; color: #53674f; }
 .level-orb small { color: var(--muted); font-size: 9px; }
@@ -147,7 +154,7 @@ input:focus, select:focus { border-color: var(--sage); box-shadow: 0 0 0 3px rgb
   .xp-card { grid-column: 1 / -1; }
   .content-grid { grid-template-columns: 1fr; }
   .history-panel { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); padding-top: 35px; }
-  .level-orb { width: 150px; height: 150px; flex-basis: 150px; }
+  .level-orb { width: 180px; height: 150px; flex-basis: 180px; }
   .level-orb strong { font-size: 52px; }
 }
 @media (max-width: 600px) {
@@ -158,10 +165,8 @@ input:focus, select:focus { border-color: var(--sage); box-shadow: 0 0 0 3px rgb
   .hero-kicker { font-size: 9px; letter-spacing: 1.5px; }
   .hero-copy p { display: none; }
   h1 { font-size: 37px; letter-spacing: -1.8px; }
-  .level-orb { position: absolute; right: 24px; width: 112px; height: 112px; flex-basis: 112px; margin: 0; }
-  .level-sprig { top: 20px; width: 27px; height: 72px; }
-  .level-sprig-left { left: 8px; }
-  .level-sprig-right { right: 8px; }
+  .level-orb { position: absolute; right: 24px; width: 124px; height: 112px; flex-basis: 124px; margin: 0; }
+  .eucalyptus { right: 4px; bottom: 4px; width: 67px; height: 102px; }
   .level-orb strong { font-size: 44px; }
   .level-orb small { display: none; }
   .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 35px; }
@@ -185,15 +190,13 @@ input:focus, select:focus { border-color: var(--sage); box-shadow: 0 0 0 3px rgb
 @media (max-width: 480px) {
   .page-shell { width: calc(100% - 20px); }
   .hero { min-height: 154px; margin: 10px 0 14px; padding: 22px 18px; border-radius: 20px; }
-  .hero-copy { padding-right: 94px; }
+  .hero-copy { padding-right: 112px; }
   .botanical-left { width: 100px; }
   .botanical-right { display: none; }
   h1 { max-width: 205px; font-size: 29px; line-height: 1.12; letter-spacing: -1.3px; }
-  .level-orb { right: 16px; width: 90px; height: 90px; flex-basis: 90px; }
+  .level-orb { right: 12px; width: 108px; height: 90px; flex-basis: 108px; }
   .level-orb::before { inset: 5px; }
-  .level-sprig { top: 17px; width: 22px; height: 57px; }
-  .level-sprig-left { left: 6px; }
-  .level-sprig-right { right: 6px; }
+  .eucalyptus { right: 2px; bottom: 3px; width: 55px; height: 82px; }
   .level-orb span { font-size: 7px; letter-spacing: 1.3px; }
   .level-orb strong { font-size: 34px; }
   .stats-grid { gap: 8px; margin-bottom: 28px; }
@@ -224,4 +227,4 @@ input:focus, select:focus { border-color: var(--sage); box-shadow: 0 0 0 3px rgb
   .dialog-actions { gap: 8px; }
   .dialog-actions .button { padding: 11px 12px; font-size: 12px; }
 }
-@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
