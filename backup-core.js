@@ -4,7 +4,7 @@
   else root.KarinaBackup = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
-  const DATA_VERSION = 7, BACKUP_FORMAT_VERSION = 1, APP_ID = "karina-level-up";
+  const DATA_VERSION = 8, BACKUP_FORMAT_VERSION = 1, APP_ID = "karina-level-up";
   const VALID_CATEGORIES = new Set(["selfCare", "style", "impressions", "growth", "energy"]);
   const VALID_TYPES = new Set(["habit", "quest"]);
   const DEFAULT_TASKS = [
@@ -21,6 +21,12 @@
   ];
   const isPlainObject = value => value !== null && typeof value === "object" && !Array.isArray(value);
   const isDateKey = value => value === undefined || /^\d{4}-\d{2}-\d{2}$/.test(value);
+  const isValidDailyQuest = value => isPlainObject(value)
+    && (value.date === undefined || isDateKey(value.date))
+    && (value.questId === undefined || typeof value.questId === "string")
+    && (value.completedOn === undefined || isDateKey(value.completedOn))
+    && Array.isArray(value.recentlyUsedIds)
+    && value.recentlyUsedIds.every(id => typeof id === "string");
   const isValidTask = task => isPlainObject(task)
     && typeof task.id === "string" && task.id.length > 0 && task.id.length <= 200
     && typeof task.title === "string" && task.title.trim().length > 0 && task.title.length <= 160
@@ -35,6 +41,7 @@
     if (!Array.isArray(value.tasks) || !value.tasks.every(isValidTask)) return { ok: false, error: "Некорректный список заданий." };
     if (!Array.isArray(value.history) || !value.history.every(item => isValidTask(item) && typeof item.completedAt === "string" && Number.isFinite(Date.parse(item.completedAt)))) return { ok: false, error: "Некорректная история выполнений." };
     if (!Number.isInteger(value.xp) || value.xp < 0 || value.xp > Number.MAX_SAFE_INTEGER) return { ok: false, error: "Некорректное значение XP." };
+    if (!isValidDailyQuest(value.dailyQuest)) return { ok: false, error: "Некорректное состояние квеста дня." };
     const ids = value.tasks.map(task => task.id);
     if (new Set(ids).size !== ids.length) return { ok: false, error: "Идентификаторы заданий повторяются." };
     return { ok: true };
@@ -42,7 +49,7 @@
 
   function migrateState(value) {
     if (!isPlainObject(value)) return { ok: false, error: "Состояние должно быть объектом." };
-    if (value.dataVersion !== undefined && ![1, 2, 3, 4, 5, 6, DATA_VERSION].includes(value.dataVersion)) return { ok: false, error: "Версия данных не поддерживается." };
+    if (value.dataVersion !== undefined && ![1, 2, 3, 4, 5, 6, 7, DATA_VERSION].includes(value.dataVersion)) return { ok: false, error: "Версия данных не поддерживается." };
     if (!Array.isArray(value.tasks) || !Array.isArray(value.history)) return { ok: false, error: "Некорректный список заданий." };
     const wasLegacy = value.dataVersion !== DATA_VERSION;
     const normalize = item => ({ ...item, type: VALID_TYPES.has(item.type) ? item.type : "quest" });
@@ -66,7 +73,10 @@
         : DEFAULT_TASKS;
       tasks = [...requiredDefaults.filter(task => !knownIds.has(task.id)), ...tasks];
     }
-    const state = { ...value, tasks, history, dataVersion: DATA_VERSION };
+    const dailyQuest = isPlainObject(value.dailyQuest)
+      ? { ...value.dailyQuest, recentlyUsedIds: Array.isArray(value.dailyQuest.recentlyUsedIds) ? value.dailyQuest.recentlyUsedIds : [] }
+      : { recentlyUsedIds: [] };
+    const state = { ...value, tasks, history, dailyQuest, dataVersion: DATA_VERSION };
     const validation = validateState(state);
     return validation.ok ? { ok: true, state } : validation;
   }

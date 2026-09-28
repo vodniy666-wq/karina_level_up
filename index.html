@@ -21,10 +21,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20260928-3" />
-    <script src="backup-core.js?v=20260914-1" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20260928-4" />
+    <script src="backup-core.js?v=20260928-1" defer></script>
     <script src="task-core.js?v=20260910-1" defer></script>
-    <script src="app.js?v=20260928-2" defer></script>
+    <script src="daily-quest-core.js?v=20260928-1" defer></script>
+    <script src="app.js?v=20260928-3" defer></script>
   </head>
   <body>
     <div class="ambient ambient-one"></div>
@@ -63,16 +64,6 @@
             <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
           </div>
         </article>
-        <article class="stat-card compact-card">
-          <div class="stat-icon orange">↗</div>
-          <div class="stat-copy"><span>Серия</span><strong><span id="streak">0</span> <small id="streak-label">дней</small></strong></div>
-          <span class="stat-note">Не останавливайся!</span>
-        </article>
-        <article class="stat-card compact-card">
-          <div class="stat-icon green">✓</div>
-          <div class="stat-copy"><span>Выполнено</span><strong id="completed-count">0</strong></div>
-          <span class="stat-note">заданий за всё время</span>
-        </article>
       </section>
 
       <section class="content-grid">
@@ -88,9 +79,8 @@
             <div class="empty-state" id="empty-habits" hidden><span>⌁</span><h3>Нет привычек в этом направлении</h3><p>Можно добавить новый ежедневный шаг.</p></div>
           </section>
           <section class="task-section quests-section" aria-labelledby="quests-title">
-            <div class="quest-heading"><span class="eyebrow">МАЛЕНЬКОЕ ПРИКЛЮЧЕНИЕ</span><h2 id="quests-title">Попробуем что-нибудь новенькое?</h2><p>Одноразовые задания для свежих впечатлений.</p></div>
+            <div class="quest-heading"><span class="eyebrow">МАЛЕНЬКОЕ ПРИКЛЮЧЕНИЕ</span><h2 id="quests-title">Попробуем что-нибудь новенькое?</h2><p>Сегодня тебе выпало</p></div>
             <div class="task-list" id="quests-list"></div>
-            <div class="empty-state" id="empty-quests" hidden><span>❧</span><h3>Все квесты выполнены</h3><p>Добавь новый, когда захочется приключений.</p></div>
           </section>
         </div>
 
